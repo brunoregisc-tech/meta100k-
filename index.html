@@ -100,6 +100,10 @@ input.err{border-color:var(--rd)}
 .tag-emp{background:var(--bl-bg);color:var(--bl)}
 .tag-pais{background:var(--am-bg);color:var(--am)}
 .tag-outro{background:var(--neu);color:var(--sub)}
+
+/* FILTROS EXTRATO */
+.ext-f{background:var(--neu);border:.5px solid var(--bdr);border-radius:20px;padding:5px 14px;font-size:12px;cursor:pointer;color:var(--sub);font-family:inherit;transition:all .2s}
+.ext-f.active{background:var(--gr);color:#fff;border-color:var(--gr)}
 .streak-box{background:linear-gradient(135deg,#FFF3E0,#FFF8F0);border:.5px solid #FAC775;border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:14px}
 .streak-fire{font-size:32px;line-height:1}
 .streak-num{font-size:28px;font-weight:700;color:#BA7517;line-height:1}
@@ -226,7 +230,17 @@ svg.chart{width:100%;height:100%}
   </div>
 
   <!-- EXTRATO -->
-  <div id="p-ext" class="panel"><div id="ext-list"></div></div>
+  <div id="p-ext" class="panel">
+    <!-- Filtros -->
+    <div style="display:flex;gap:6px;flex-wrap:wrap" id="ext-filtros">
+      <button class="ext-f active" onclick="setFiltro('todos')" data-f="todos">Todos</button>
+      <button class="ext-f" onclick="setFiltro('aporte')" data-f="aporte">💵 Aportes</button>
+      <button class="ext-f" onclick="setFiltro('renda')" data-f="renda">💰 Renda extra</button>
+      <button class="ext-f" onclick="setFiltro('mes')" data-f="mes">📅 Este mês</button>
+    </div>
+    <div id="ext-resumo"></div>
+    <div id="ext-list"></div>
+  </div>
 
   <!-- GRÁFICO -->
   <div id="p-graf" class="panel">
@@ -739,6 +753,116 @@ function rendaExtraMesAtual(){
     return d.getMonth()===n.getMonth()&&d.getFullYear()===n.getFullYear();
   }).reduce((s,r)=>s+r.valor,0);
 }
+
+// ─── EXTRATO UNIFICADO ───────────────────────────────────────
+let extFiltro='todos';
+function setFiltro(f){
+  extFiltro=f;
+  document.querySelectorAll('.ext-f').forEach(b=>{
+    b.classList.toggle('active',b.dataset.f===f);
+  });
+  renderExtrato();
+}
+function renderExtrato(){
+  const n=new Date();
+  const mesAtualStr=MESES[n.getMonth()]+'/'+String(n.getFullYear()).slice(2);
+
+  // Unificar todos os movimentos
+  let movimentos=[];
+
+  // Aportes
+  if(extFiltro==='todos'||extFiltro==='aporte'||extFiltro==='mes'){
+    S.aportes.forEach(a=>{
+      const d=new Date(a.data+'T00:00:00');
+      const mes=MESES[d.getMonth()]+'/'+String(d.getFullYear()).slice(2);
+      if(extFiltro==='mes'&&mes!==mesAtualStr)return;
+      movimentos.push({id:a.id,tipo:'aporte',icon:COFRES.find(c=>c.id===a.cofre)?.emoji||'💰',
+        nome:COFRES.find(c=>c.id===a.cofre)?.nome||a.cofre,
+        nota:a.nota,data:a.data,valor:a.valor,mes,cor:'var(--gr)'});
+    });
+  }
+
+  // Renda extra
+  if(extFiltro==='todos'||extFiltro==='renda'||extFiltro==='mes'){
+    S.rendaExtra.forEach(r=>{
+      const d=new Date(r.data+'T00:00:00');
+      const mes=MESES[d.getMonth()]+'/'+String(d.getFullYear()).slice(2);
+      if(extFiltro==='mes'&&mes!==mesAtualStr)return;
+      movimentos.push({id:r.id,tipo:'renda',icon:'💰',nome:r.desc,
+        nota:'',data:r.data,valor:r.valor,mes,cor:'var(--bl)'});
+    });
+  }
+
+  if(!movimentos.length){
+    document.getElementById('ext-list').innerHTML='<div style="text-align:center;padding:40px 20px;color:var(--sub);font-size:14px">Nenhum registro encontrado.</div>';
+    document.getElementById('ext-resumo').innerHTML='';
+    return;
+  }
+
+  // Agrupar por mês
+  const grupos={};
+  movimentos.sort((a,b)=>b.data>a.data?1:-1).forEach(m=>{
+    if(!grupos[m.mes])grupos[m.mes]={total:0,aportes:0,renda:0,itens:[]};
+    grupos[m.mes].total+=m.valor;
+    if(m.tipo==='aporte')grupos[m.mes].aportes+=m.valor;
+    else grupos[m.mes].renda+=m.valor;
+    grupos[m.mes].itens.push(m);
+  });
+
+  // Resumo geral
+  const totalGeral=movimentos.reduce((s,m)=>s+m.valor,0);
+  const totalAp=movimentos.filter(m=>m.tipo==='aporte').reduce((s,m)=>s+m.valor,0);
+  const totalRe=movimentos.filter(m=>m.tipo==='renda').reduce((s,m)=>s+m.valor,0);
+  document.getElementById('ext-resumo').innerHTML=`
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:4px">
+      <div style="background:var(--gr-bg);border:.5px solid var(--gr-bdr);border-radius:8px;padding:10px;text-align:center">
+        <div style="font-size:9px;color:var(--sub);text-transform:uppercase;letter-spacing:.5px">Total</div>
+        <div style="font-size:15px;font-weight:500;color:var(--gr)">${brl(totalGeral)}</div>
+      </div>
+      <div style="background:var(--neu);border:.5px solid var(--bdr);border-radius:8px;padding:10px;text-align:center">
+        <div style="font-size:9px;color:var(--sub);text-transform:uppercase;letter-spacing:.5px">Aportes</div>
+        <div style="font-size:15px;font-weight:500;color:var(--ink)">${brl(totalAp)}</div>
+      </div>
+      <div style="background:var(--bl-bg);border:.5px solid var(--bl-bdr);border-radius:8px;padding:10px;text-align:center">
+        <div style="font-size:9px;color:var(--sub);text-transform:uppercase;letter-spacing:.5px">Renda extra</div>
+        <div style="font-size:15px;font-weight:500;color:var(--bl)">${brl(totalRe)}</div>
+      </div>
+    </div>`;
+
+  // Lista por mês
+  const pmSorted=Object.entries(grupos).sort((a,b)=>{
+    const pm=s=>{const[m,y]=s.split('/');return parseInt(y)*100+MESES.indexOf(m);};
+    return pm(b[0])-pm(a[0]);
+  });
+
+  document.getElementById('ext-list').innerHTML=pmSorted.map(([mes,g])=>`
+    <div style="margin-bottom:14px">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--gr-bg);border-radius:8px 8px 0 0;border-left:3px solid var(--gr)">
+        <span style="font-size:13px;font-weight:500;color:var(--gr)">${mes}</span>
+        <div style="text-align:right">
+          <div style="font-size:14px;font-weight:500;color:var(--gr)">${brl(g.total)}</div>
+          <div style="font-size:10px;color:var(--sub)">${g.itens.length} registro${g.itens.length>1?'s':''}</div>
+        </div>
+      </div>
+      <div style="background:var(--card);border:.5px solid var(--bdr);border-top:none;border-radius:0 0 8px 8px">
+        ${g.itens.map((m,i)=>`
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:${i<g.itens.length-1?'.5px solid var(--bdr)':'none'}">
+            <div style="display:flex;align-items:center;gap:10px">
+              <span style="font-size:16px">${m.icon}</span>
+              <div>
+                <div style="font-size:12px;background:${m.tipo==='aporte'?'var(--gr-bg)':'var(--bl-bg)'};color:${m.tipo==='aporte'?'var(--gr)':'var(--bl)'};border-radius:10px;padding:1px 7px;display:inline-block;font-weight:500;margin-bottom:2px">${m.tipo==='aporte'?'Aporte':'Renda extra'}</div>
+                <div style="font-size:13px;font-weight:500;color:var(--ink)">${m.nome}</div>
+                <div style="font-size:11px;color:var(--sub)">${fmtD(m.data)}${m.nota?' · '+m.nota:''}</div>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="font-size:14px;font-weight:600;color:${m.cor}">+${brl(m.valor)}</span>
+              <button onclick="${m.tipo==='aporte'?'delAporte':'delRendaExtra'}(${m.id})" style="background:none;border:none;cursor:pointer;color:var(--sub);font-size:18px;padding:0 2px;line-height:1">×</button>
+            </div>
+          </div>`).join('')}
+      </div>
+    </div>`).join('');
+}
 // ─── REEMBOLSOS ──────────────────────────────────────────────
 function editDevedor(id){
   const d=S.devedores.find(x=>x.id===id);if(!d)return;
@@ -998,6 +1122,7 @@ function go(tab){
   event.currentTarget.classList.add('active');
   if(tab==='graf')setTimeout(()=>{drawChart(patrimonioAtual());},50);
   if(tab==='cal')renderCalendario();
+  if(tab==='ext')renderExtrato();
   if(tab==='recv'){renderReembolsos();}
 }
 
