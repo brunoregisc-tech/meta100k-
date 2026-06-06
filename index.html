@@ -279,7 +279,21 @@ svg.chart{width:100%;height:100%}
     <div class="card">
       <div class="card-lbl" id="cal-titulo">Calendário financeiro</div>
       <div id="cal-lista"></div>
-      <div id="form-add-conta"></div>
+    </div>
+    <!-- Form adicionar conta — fora do renderCalendario para não resetar -->
+    <div class="card" id="card-add-conta">
+      <div class="card-lbl">Adicionar conta fixa</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <div class="field"><div class="field-lbl">Nome</div><input type="text" id="cf-nome" placeholder="Ex: Saae"></div>
+          <div class="field"><div class="field-lbl">Emoji</div><input type="text" id="cf-emoji" placeholder="💧" maxlength="2" style="text-align:center;font-size:18px"></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <div class="field"><div class="field-lbl">Dia do mês</div><input type="number" id="cf-dia" placeholder="Ex: 10" min="1" max="31" inputmode="numeric"></div>
+          <div class="field"><div class="field-lbl">Valor (R$)</div><input type="number" id="cf-val" placeholder="Ex: 64,86" inputmode="decimal"></div>
+        </div>
+        <button class="btn btn-bl" onclick="addContaFixa()">+ Adicionar conta</button>
+      </div>
     </div>
   </div>
 
@@ -510,10 +524,23 @@ function marcarContaPaga(id){
 }
 function editConta(id){
   const c=S.contasFixas.find(x=>x.id===id);if(!c)return;
-  const v=prompt('Novo valor de '+c.nome+':',c.valor);
-  if(v===null)return;const n=parseFloat(v.replace(',','.'));
-  if(isNaN(n)||n<0)return;
-  S.contasFixas=S.contasFixas.map(x=>x.id===id?{...x,valor:n}:x);
+  const campo=prompt('O que editar?\n1 = Valor\n2 = Dia de vencimento\n3 = Nome');
+  if(!campo)return;
+  if(campo==='1'){
+    const v=prompt('Novo valor de '+c.nome+' (R$):',c.valor);
+    if(v===null)return;const n=parseFloat(v.replace(',','.'));
+    if(isNaN(n)||n<0)return;
+    S.contasFixas=S.contasFixas.map(x=>x.id===id?{...x,valor:n}:x);
+  } else if(campo==='2'){
+    const d=prompt('Novo dia de vencimento (1-31):',c.dia);
+    if(d===null)return;const n=parseInt(d);
+    if(isNaN(n)||n<1||n>31)return;
+    S.contasFixas=S.contasFixas.map(x=>x.id===id?{...x,dia:n}:x);
+  } else if(campo==='3'){
+    const nm=prompt('Novo nome:',c.nome);
+    if(!nm||!nm.trim())return;
+    S.contasFixas=S.contasFixas.map(x=>x.id===id?{...x,nome:nm.trim()}:x);
+  }
   save();renderCalendario();
 }
 function delConta(id){
@@ -528,7 +555,7 @@ function addContaFixa(){
   const emoji=document.getElementById('cf-emoji').value||'📄';
   if(!nome||isNaN(dia)||dia<1||dia>31||isNaN(val)){alert('Preencha todos os campos.');return;}
   S.contasFixas.push({id:'cf_'+Date.now(),nome,dia,valor:val,emoji,pagoMes:null});
-  document.getElementById('cf-nome').value='';document.getElementById('cf-dia').value='';document.getElementById('cf-val').value='';
+  document.getElementById('cf-nome').value='';document.getElementById('cf-dia').value='';document.getElementById('cf-val').value='';document.getElementById('cf-emoji').value='';
   save();renderCalendario();
 }
 function marcarPago(id){
@@ -632,30 +659,39 @@ function renderCalendario(){
     const corVal=e.tipo==='renda'||e.tipo==='receber'?'var(--gr)':e.tipo==='meta'?'var(--bl)':'var(--rd)';
     const nomeStyle='font-size:13px;font-weight:500;color:var(--ink)';
     const pagoBadge=e.pago?'<span style="font-size:10px;background:var(--gr-bg);color:var(--gr);border:.5px solid var(--gr-bdr);border-radius:10px;padding:1px 7px;margin-right:4px">✓ pago</span>':'';
-    return`<div class="cal-evento"><div class="${diaClass}">${e.dia}</div><div class="cal-icon">${e.icon}</div><div class="cal-info"><div style="${nomeStyle}">${pagoBadge}${e.nome}</div><div style="display:flex;gap:6px;margin-top:3px;align-items:center">${e.acao||''}${e.extra||''}</div></div><div class="cal-val" style="color:${e.val?corVal:'transparent'}">${e.val||'—'}</div></div>`;
+    return`<div class="cal-evento"><div class="${diaClass}">${e.dia}</div><div class="cal-icon">${e.icon}</div><div class="cal-info"><div style="${nomeStyle}">${pagoBadge}${e.nome}</div><div style="display:flex;gap:6px;margin-top:3px;align-items:center;flex-wrap:wrap">${e.acao||''}${e.extra||''}</div></div><div style="font-size:14px;font-weight:600;color:${e.val?corVal:'transparent'};white-space:nowrap;min-width:80px;text-align:right">${e.val||'—'}</div></div>`;
   }).join('')+`
   <div style="margin-top:14px;padding-top:12px;border-top:.5px solid var(--bdr)">
     <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--sub);margin-bottom:4px"><span>Total saídas estimadas</span><span style="color:var(--rd);font-weight:500">-${brl(totalSaidas)}</span></div>
     <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--sub)"><span>Renda pró-labore</span><span style="color:var(--gr);font-weight:500">+${brl(8000)}</span></div>
   </div>`;
 
-  // Form adicionar conta
-  document.getElementById('form-add-conta').innerHTML=`
-    <div style="display:flex;flex-direction:column;gap:10px;margin-top:14px;padding-top:12px;border-top:.5px solid var(--bdr)">
-      <div style="font-size:11px;color:var(--sub);text-transform:uppercase;letter-spacing:.5px">Adicionar conta fixa</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-        <div class="field"><div class="field-lbl">Nome</div><input type="text" id="cf-nome" placeholder="Ex: Saae"></div>
-        <div class="field"><div class="field-lbl">Emoji</div><input type="text" id="cf-emoji" placeholder="💧" maxlength="2" style="text-align:center;font-size:18px"></div>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-        <div class="field"><div class="field-lbl">Dia do mês</div><input type="number" id="cf-dia" placeholder="Ex: 10" min="1" max="31" inputmode="numeric"></div>
-        <div class="field"><div class="field-lbl">Valor (R$)</div><input type="number" id="cf-val" placeholder="Ex: 64,86" inputmode="decimal"></div>
-      </div>
-      <button class="btn btn-bl" onclick="addContaFixa()">+ Adicionar</button>
-    </div>`;
+  // Form add conta agora é HTML estático — não precisa gerar aqui
 }
 
 // ─── REEMBOLSOS ──────────────────────────────────────────────
+function editDevedor(id){
+  const d=S.devedores.find(x=>x.id===id);if(!d)return;
+  const campo=prompt('O que editar?\n1 = Dia de pagamento\n2 = Valor da parcela\n3 = Total devido');
+  if(!campo)return;
+  if(campo==='1'){
+    const v=prompt('Novo dia de pagamento (1-31):',d.dia);
+    if(v===null)return;const n=parseInt(v);
+    if(isNaN(n)||n<1||n>31)return;
+    S.devedores=S.devedores.map(x=>x.id===id?{...x,dia:n}:x);
+  } else if(campo==='2'){
+    const v=prompt('Novo valor da parcela (R$):',d.parc);
+    if(v===null)return;const n=parseFloat(v.replace(',','.'));
+    if(isNaN(n)||n<0)return;
+    S.devedores=S.devedores.map(x=>x.id===id?{...x,parc:n}:x);
+  } else if(campo==='3'){
+    const v=prompt('Novo total devido (R$):',d.total);
+    if(v===null)return;const n=parseFloat(v.replace(',','.'));
+    if(isNaN(n)||n<0)return;
+    S.devedores=S.devedores.map(x=>x.id===id?{...x,total:n}:x);
+  }
+  save();render();
+}
 function addReembolso(){
   const desc=document.getElementById('rb-desc').value.trim();
   const val=parseFloat(document.getElementById('rb-val').value.replace(',','.'));
