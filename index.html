@@ -330,11 +330,20 @@ svg.chart{width:100%;height:100%}
             </select>
           </div>
           <div class="field"><div class="field-lbl">Pagamento</div>
-            <select id="gs-forma">
+            <select id="gs-forma" onchange="toggleCartaoSelect()">
               <option value="PIX">PIX</option>
               <option value="Cartão">Cartão</option>
               <option value="Dinheiro">Dinheiro</option>
               <option value="Débito">Débito</option>
+            </select>
+          </div>
+        </div>
+        <div id="gs-cartao-wrap" style="display:none">
+          <div class="field"><div class="field-lbl">Qual cartão?</div>
+            <select id="gs-cartao">
+              <option value="nu">💜 Nubank</option>
+              <option value="mp">💳 Mercado Pago</option>
+              <option value="sant">🔴 Santander Elite</option>
             </select>
           </div>
         </div>
@@ -396,7 +405,9 @@ svg.chart{width:100%;height:100%}
     </div>
     <div class="card">
       <div class="card-lbl">Importar dados</div>
-      <div style="font-size:13px;color:var(--sub);margin-bottom:12px;line-height:1.6">Restaura dados de um backup anterior. <strong>Atenção:</strong> substitui todos os dados atuais.</div>
+      <div style="background:var(--rd-bg);border:.5px solid var(--rd-bdr);border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:12px;color:var(--rd);line-height:1.6">
+        ⚠️ <strong>Atenção:</strong> importar um arquivo JSON irá <strong>substituir permanentemente</strong> todos os dados atuais — incluindo os dados salvos na nuvem (Supabase). Esta ação não pode ser desfeita. Certifique-se de estar importando o arquivo mais recente.
+      </div>
       <input type="file" id="import-file" accept=".json" onchange="importData(event)" style="font-size:13px;padding:8px">
     </div>
     <div class="card">
@@ -419,7 +430,7 @@ const DATA_INICIO=new Date(2026,5,1);
 const MESES=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
 const PARC=[{r:5,v:112},{r:3,v:79.9},{r:2,v:83.16},{r:4,v:61.47},{r:8,v:304.89},{r:10,v:68.46},{r:4,v:34.51},{r:3,v:52.36},{r:3,v:50.66},{r:2,v:58.19},{r:11,v:251.83},{r:10,v:77.72},{r:15,v:88.82},{r:15,v:141.86},{r:6,v:48.52},{r:3,v:19.60},{r:2,v:37.70},{r:9,v:58.60},{r:3,v:38.74},{r:4,v:39.89}];
 const COFRES=[{id:'meli',nome:'Meli Dólar',emoji:'💵'},{id:'cofrinho',nome:'Cofrinho MP',emoji:'🐷'},{id:'gcb',nome:'GCB Investimento',emoji:'📈'},{id:'sicoob',nome:'Sicoob',emoji:'🏦'},{id:'nubank',nome:'Nubank',emoji:'💜'},{id:'outros',nome:'Outros',emoji:'💰'}];
-const MARCOS_DEF=[{v:20000,l:'Reserva de emergência',d:'Nenhum imprevisto volta pro cartão.',c:'#1D9E75'},{v:50000,l:'Meio caminho',d:'Enzo tem 10 anos. Ana Luiza 8. Maria Isabele 3.',c:'#185FA5'},{v:100000,l:'Meta principal 🎯',d:'A meta que você definiu. Base para o próximo nível.',c:'#BA7517'},{v:150000,l:'Patrimônio relevante',d:'Capital que começa a gerar renda passiva real.',c:'#9b27af'},{v:200000,l:'Dois séculos',d:'Enzo começa a faculdade. Você já construiu algo.',c:'#c0392b'},{v:300000,l:'Patrimônio sólido',d:'Liberdade de decisão. Você escolhe, não o cartão.',c:'#2c3e50'},{v:500000,l:'Meio milhão',d:'Renda passiva cobre seus custos fixos.',c:'#1a7a4a'}];
+const MARCOS_DEF=[{v:20000,l:'1º semestre — Dez/26',d:'Reserva de emergência formada. Nenhum imprevisto volta pro cartão.',c:'#1D9E75'},{v:33000,l:'2º semestre — Jun/27',d:'Parcelados encerrados. Aporte acelera para R$4.500+/mês.',c:'#185FA5'},{v:47000,l:'3º semestre — Dez/27',d:'Quase metade. Enzo tem 9 anos. Bell e você constroem juntos.',c:'#BA7517'},{v:62000,l:'4º semestre — Jun/28',d:'Mais da metade. A reta final começa a aparecer.',c:'#9b27af'},{v:77000,l:'5º semestre — Dez/28',d:'R$23K faltando. Visível no horizonte. Não para agora.',c:'#c0392b'},{v:100000,l:'META 🎯 — Ago/29',d:'R$100.000 construídos com disciplina. Base para o próximo nível.',c:'#BA7517'}];
 const REGRAS_DEF=[{n:'01',t:'Aporte automático no dia 05',d:'Pró-labore entrou → aporte sai antes de qualquer gasto. Pague-se primeiro.',c:'#1D9E75'},{n:'02',t:'Zero novos parcelamentos',d:'20 parcelamentos ativos. Cada compra nova = mais 10–18 meses de sangria.',c:'#A32D2D'},{n:'03',t:'Fatura sempre no total',d:'Nunca o mínimo, nunca parcelar fatura. 15,89%/mês destrói qualquer investimento.',c:'#BA7517'},{n:'04',t:'Reserva intocável de R$20K',d:'Ao atingir R$20K esse valor é piso. Só emergência real o toca.',c:'#1D9E75'},{n:'05',t:'Revisão toda segunda-feira',d:'Anote os saldos. Veja se está na frente ou atrás da meta.',c:'#185FA5'},{n:'06',t:'Regra das 48h no ML/Amazon',d:'Antes de qualquer compra não essencial: espere 48h.',c:'#A32D2D'}];
 
 // ─── STATE ─────────────────────────────────────────────────
@@ -682,8 +693,21 @@ function exportData(){
 }
 function importData(evt){
   const file=evt.target.files[0];if(!file)return;
+  const ok=confirm('⚠️ ATENÇÃO\n\nEsta ação irá sobrescrever TODOS os dados atuais, incluindo os dados na nuvem (Supabase).\n\nEsta operação não pode ser desfeita.\n\nTem certeza que deseja continuar?');
+  if(!ok){evt.target.value='';return;}
   const r=new FileReader();
-  r.onload=e=>{try{const d=JSON.parse(e.target.result);if(d.aportes&&d.faturas){S=d;save();render();alert('Dados importados com sucesso!');}}catch(ex){alert('Arquivo inválido.');}};
+  r.onload=e=>{
+    try{
+      const d=JSON.parse(e.target.result);
+      if(d.aportes&&d.faturas){
+        mergeState(d);
+        save();
+        saveToSupabase(); // Atualiza também na nuvem
+        render();
+        alert('✓ Dados importados com sucesso!\nNuvem atualizada.');
+      } else {alert('Arquivo inválido ou formato incorreto.');}
+    }catch(ex){alert('Erro ao ler o arquivo. Verifique se é um backup válido.');}
+  };
   r.readAsText(file);
 }
 
@@ -971,15 +995,22 @@ function setGsFiltro(f){
   renderGastos();
 }
 
+
+function toggleCartaoSelect(){
+  const forma=document.getElementById('gs-forma').value;
+  const wrap=document.getElementById('gs-cartao-wrap');
+  if(wrap)wrap.style.display=forma==='Cartão'?'block':'none';
+}
 function addGasto(){
   const val=parseBRL(document.getElementById('gs-val').value);
   const desc=document.getElementById('gs-desc').value.trim();
   const data=document.getElementById('gs-data').value;
   const cat=document.getElementById('gs-cat').value;
   const forma=document.getElementById('gs-forma').value;
+  const cartaoId=forma==='Cartão'?document.getElementById('gs-cartao')?.value:null;
   if(isNaN(val)||val<=0||!desc){document.getElementById('gs-err').style.display='block';return;}
   document.getElementById('gs-err').style.display='none';
-  S.gastos.push({id:Date.now(),desc,valor:val,data,cat,forma,ts:Date.now()});
+  S.gastos.push({id:Date.now(),desc,valor:val,data,cat,forma,cartao:cartaoId,ts:Date.now()});
   document.getElementById('gs-val').value='';
   document.getElementById('gs-desc').value='';
   save();renderGastos();
@@ -1034,7 +1065,7 @@ function renderGastos(){
     <div style="background:var(--card);border:.5px solid var(--bdr);border-left:3px solid var(--rd);border-radius:0 8px 8px 0;padding:12px 14px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center">
       <div>
         <div style="font-size:13px;font-weight:500;color:var(--ink)">${g.desc}</div>
-        <div style="font-size:11px;color:var(--sub);margin-top:2px">${fmtD(g.data)} · ${g.cat} · ${g.forma}</div>
+        <div style="font-size:11px;color:var(--sub);margin-top:2px">${fmtD(g.data)} · ${g.cat} · ${g.forma}${g.cartao?` · ${S.faturas.find(f=>f.id===g.cartao)?.nome||g.cartao}`:''}</div>
       </div>
       <div style="display:flex;align-items:center;gap:8px">
         <span style="font-size:15px;font-weight:600;color:var(--rd)">-${brl(g.valor)}</span>
@@ -1148,12 +1179,29 @@ function render(){
   // Faturas
   const n=new Date(),dh=n.getDate();
   const mesAtual=`${n.getMonth()}_${n.getFullYear()}`;
+  // Gastos do mês por cartão
+  const gastosPorCartao={};
+  S.gastos.filter(g=>{
+    const d=new Date(g.data+'T00:00:00');
+    return d.getMonth()===new Date().getMonth()&&d.getFullYear()===new Date().getFullYear()&&g.cartao;
+  }).forEach(g=>{gastosPorCartao[g.cartao]=(gastosPorCartao[g.cartao]||0)+g.valor;});
+
   document.getElementById('fat-list').innerHTML=S.faturas.map(f=>{
     let dias=f.dia-dh;if(dias<0)dias+=30;
     const pago=f.pagoMes===mesAtual;
     const cor=pago?'var(--gr)':dias<=3?'var(--rd)':dias<=7?'var(--am)':'var(--ink)';
     const diasTxt=pago?`✓ Pago${f.pagoData?' em '+fmtD(f.pagoData):''}`:dias===0?'Hoje':dias===1?'Amanhã':dias+' dias';
-    return`<div class="row"><div><div class="row-main">${f.nome}</div><div class="row-sub">Dia ${f.dia}${f.atualizado?' · atualizado '+fmtD(f.atualizado):' · estimado'}</div></div><div style="text-align:right"><div style="font-size:13px;font-weight:500;color:${cor}">${diasTxt}</div><div style="display:flex;align-items:center;gap:6px;justify-content:flex-end;margin-top:4px">${!pago?`<button class="btn-ghost" style="padding:3px 8px;font-size:10px;background:var(--gr-bg);color:var(--gr);border-color:var(--gr-bdr)" onclick="marcarPago('${f.id}')">✓ Paguei</button>`:''}<span style="font-size:13px">${brl(f.valor)}</span><button class="btn-ghost" style="padding:2px 8px;font-size:10px" onclick="editFatura('${f.id}')">editar</button></div></div></div>`;
+    const gastoCart=gastosPorCartao[f.id]||0;
+    const pctCart=f.valor>0?Math.min(100,(gastoCart/f.valor)*100):0;
+    const barraCartao=gastoCart>0?`<div style="margin-top:6px">
+      <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--sub);margin-bottom:3px">
+        <span>Lançado este mês</span><span style="color:var(--am);font-weight:500">${brl(gastoCart)} / ${brl(f.valor)}</span>
+      </div>
+      <div style="background:var(--neu);border-radius:3px;height:5px;overflow:hidden">
+        <div style="height:100%;width:${pctCart}%;background:${pctCart>90?'var(--rd)':'var(--am)'};border-radius:3px"></div>
+      </div>
+    </div>`:'';
+    return`<div class="row" style="flex-direction:column;align-items:stretch"><div style="display:flex;justify-content:space-between;align-items:center"><div><div class="row-main">${f.nome}</div><div class="row-sub">Dia ${f.dia}${f.atualizado?' · atualizado '+fmtD(f.atualizado):' · estimado'}</div></div><div style="text-align:right"><div style="font-size:13px;font-weight:500;color:${cor}">${diasTxt}</div><div style="display:flex;align-items:center;gap:6px;justify-content:flex-end;margin-top:4px">${!pago?`<button class="btn-ghost" style="padding:3px 8px;font-size:10px;background:var(--gr-bg);color:var(--gr);border-color:var(--gr-bdr)" onclick="marcarPago('${f.id}')">✓ Paguei</button>`:''}<span style="font-size:13px">${brl(f.valor)}</span><button class="btn-ghost" style="padding:2px 8px;font-size:10px" onclick="editFatura('${f.id}')">editar</button></div></div></div>${barraCartao}</div>`;
   }).join('');
 
   // A receber home
