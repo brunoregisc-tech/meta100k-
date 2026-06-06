@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Meta 100K">
+<meta name="theme-color" content="#f7f6f3">
+<title>Meta 100K — Bruno Régis</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#f7f6f3;--card:#fff;--bdr:#e8e4dd;--ink:#2a2724;--sub:#888580;
+  --gr:#1D9E75;--gr-bg:#EAF3DE;--gr-bdr:#9FE1CB;
+  --am:#BA7517;--am-bg:#FAEEDA;--am-bdr:#FAC775;
+  --bl:#185FA5;--bl-bg:#E6F1FB;--bl-bdr:#B5D4F4;
+  --rd:#A32D2D;--rd-bg:#FCEBEB;--rd-bdr:#F7C1C1;
+  --neu:#f0ede8;
+  font-size:16px;
+}
+body{background:var(--bg);color:var(--ink);font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;min-height:100vh;padding-bottom:env(safe-area-inset-bottom)}
+/* HEADER */
+#header{background:var(--card);border-bottom:.5px solid var(--bdr);padding:14px 16px 0;position:sticky;top:0;z-index:100}
+.h-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
+.h-title{font-size:10px;color:var(--sub);letter-spacing:2px;text-transform:uppercase}
+.h-sub{font-size:11px;color:var(--sub);margin-top:2px}
+.h-pat{font-size:21px;font-weight:500;color:var(--gr);text-align:right}
+.h-pct{font-size:11px;color:var(--sub);text-align:right}
+.prog-wrap{background:var(--neu);border-radius:6px;height:8px;overflow:hidden;margin-bottom:12px}
+.prog-bar{height:100%;background:var(--gr);border-radius:6px;transition:width .5s}
+/* TABS */
+#tabs{display:flex;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none}
+#tabs::-webkit-scrollbar{display:none}
+.tab-btn{flex:0 0 auto;background:transparent;border:none;border-bottom:2px solid transparent;color:var(--sub);padding:8px 12px;font-size:12px;cursor:pointer;white-space:nowrap;font-family:inherit}
+.tab-btn.active{color:var(--gr);border-bottom-color:var(--gr)}
+/* MAIN */
+#main{padding:14px 16px;display:flex;flex-direction:column;gap:12px}
+.panel{display:none}.panel.active{display:flex;flex-direction:column;gap:12px}
+/* CARDS */
+.card{background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:16px}
+.card-lbl{font-size:10px;color:var(--sub);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px}
+/* GRID */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.stat-box{background:var(--neu);border-radius:8px;padding:12px 14px}
+.stat-lbl{font-size:10px;color:var(--sub);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+.stat-val{font-size:18px;font-weight:500}
+/* ALERT */
+.alert{border-radius:12px;padding:14px 16px;border:.5px solid}
+.alert-success{background:var(--gr-bg);border-color:var(--gr-bdr);color:var(--gr)}
+.alert-info{background:var(--bl-bg);border-color:var(--bl-bdr);color:var(--bl)}
+.alert-warn{background:var(--am-bg);border-color:var(--am-bdr);color:var(--am)}
+.alert-danger{background:var(--rd-bg);border-color:var(--rd-bdr);color:var(--rd)}
+.alert-emoji{font-size:16px;margin-bottom:6px}
+.alert-msg{font-size:13px;line-height:1.6}
+/* INPUTS */
+.field{display:flex;flex-direction:column;gap:4px}
+.field-lbl{font-size:11px;color:var(--sub)}
+input,select{width:100%;padding:10px 12px;font-size:15px;border:.5px solid var(--bdr);border-radius:8px;background:var(--bg);color:var(--ink);outline:none;font-family:inherit;appearance:none;-webkit-appearance:none}
+input[type=date]{font-size:13px}
+input.err{border-color:var(--rd)}
+.err-msg{font-size:11px;color:var(--rd);margin-top:2px}
+/* BUTTONS */
+.btn{width:100%;padding:12px;border:none;border-radius:8px;font-size:15px;font-weight:500;cursor:pointer;font-family:inherit;color:#fff}
+.btn-gr{background:var(--gr)}
+.btn-bl{background:var(--bl)}
+.btn-ghost{background:transparent;color:var(--sub);border:.5px solid var(--bdr);width:auto;padding:8px 14px;font-size:12px;border-radius:6px}
+.btn-sm{padding:6px 12px;font-size:12px;border:none;border-radius:6px;cursor:pointer;font-family:inherit;color:#fff}
+.btn-sm-gr{background:var(--gr)}
+.btn-sm-rd{background:var(--rd)}
+.btn-sm-ghost{background:none;color:var(--sub);border:.5px solid var(--bdr)}
+/* ROWS */
+.row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:.5px solid var(--bdr)}
+.row:last-child{border-bottom:none}
+.row-main{font-size:13px;font-weight:500;color:var(--ink)}
+.row-sub{font-size:11px;color:var(--sub);margin-top:1px}
+.row-val{font-size:14px;font-weight:500}
+/* MARCOS */
+.marco-card{border-radius:12px;padding:16px;border:.5px solid var(--bdr);border-left:4px solid;margin-bottom:10px}
+.marco-hit{background:var(--gr-bg);border-color:var(--gr-bdr)}
+/* EXTRATO */
+.mes-head{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--gr-bg);border-radius:8px 8px 0 0;border-left:3px solid var(--gr)}
+.mes-body{background:var(--card);border:.5px solid var(--bdr);border-top:none;border-radius:0 0 8px 8px}
+.mes-nome{font-size:13px;font-weight:500;color:var(--gr)}
+.mes-total{font-size:14px;font-weight:500;color:var(--gr)}
+.mes-cnt{font-size:10px;color:var(--sub)}
+/* REGRAS */
+.regra-card{background:var(--card);border:.5px solid var(--bdr);border-radius:0 12px 12px 0;border-left:3px solid;padding:14px 16px;display:flex;gap:14px;margin-bottom:10px}
+.regra-n{font-size:20px;font-weight:500;min-width:32px}
+.regra-t{font-size:14px;font-weight:500;margin-bottom:4px}
+.regra-d{font-size:12px;color:var(--sub);line-height:1.6}
+
+/* STREAK */
+
+/* REEMBOLSOS */
+.reimb-card{background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:14px 16px;margin-bottom:10px}
+.reimb-pend{border-left:3px solid var(--am)}
+.reimb-rec{border-left:3px solid var(--gr);background:var(--gr-bg)}
+.tag{display:inline-block;font-size:10px;padding:2px 8px;border-radius:10px;font-weight:500;margin-right:4px}
+.tag-emp{background:var(--bl-bg);color:var(--bl)}
+.tag-pais{background:var(--am-bg);color:var(--am)}
+.tag-outro{background:var(--neu);color:var(--sub)}
+.streak-box{background:linear-gradient(135deg,#FFF3E0,#FFF8F0);border:.5px solid #FAC775;border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:14px}
+.streak-fire{font-size:32px;line-height:1}
+.streak-num{font-size:28px;font-weight:700;color:#BA7517;line-height:1}
+.streak-lbl{font-size:11px;color:#888580;margin-top:2px}
+/* META MENSAL */
+.meta-mes{background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:16px}
+.meta-topo{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px}
+.meta-ok{background:var(--gr-bg);border-color:var(--gr-bdr)}
+/* CALENDÁRIO */
+.cal-evento{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:.5px solid var(--bdr)}
+.cal-evento:last-child{border-bottom:none}
+.cal-dia{font-size:11px;font-weight:700;color:var(--sub);width:28px;text-align:center;flex-shrink:0}
+.cal-dia.hoje{color:var(--gr);background:var(--gr-bg);border-radius:4px;padding:2px 4px}
+.cal-dia.passado{opacity:.45}
+.cal-icon{font-size:18px;flex-shrink:0}
+.cal-info{flex:1}
+.cal-nome{font-size:13px;font-weight:500;color:var(--ink)}
+.cal-sub{font-size:11px;color:var(--sub);margin-top:1px}
+.cal-val{font-size:13px;font-weight:500;white-space:nowrap}
+.cal-pago{text-decoration:line-through;opacity:.5}
+/* DEVEDOR */
+.dev-card{background:var(--card);border:.5px solid var(--bdr);border-radius:12px;padding:16px;margin-bottom:10px}
+.dev-hit{background:var(--gr-bg);border-color:var(--gr-bdr)}
+/* PROG BAR */
+.mini-prog{background:var(--neu);border-radius:4px;height:8px;overflow:hidden;margin-bottom:6px}
+.mini-bar{height:100%;border-radius:4px;transition:width .4s}
+/* FOOTER */
+.footer-info{font-size:11px;color:var(--sub);font-style:italic;margin-top:6px}
+/* EXPORT/IMPORT */
+.backup-row{display:flex;gap:8px}
+/* CHART */
+#chartWrap{position:relative;width:100%;height:220px}
+svg.chart{width:100%;height:100%}
+</style>
+</head>
+<body>
+
+<div id="header">
+  <div id="sync-bar" style="background:var(--bl-bg);border-bottom:.5px solid var(--bl-bdr);padding:4px 16px;font-size:11px;color:var(--bl);display:flex;align-items:center;gap:6px">⟳ Conectando...</div>
+<div class="h-top">
+    <div><div class="h-title">Meta Patrimônio</div><div class="h-sub">Bruno · Enzo · Ana Luiza · Maria Isabele</div></div>
+    <div><div class="h-pat" id="h-pat">R$ 0,00</div><div class="h-pct" id="h-pct">0% · prazo Ago/29</div></div>
+  </div>
+  <div class="prog-wrap"><div class="prog-bar" id="prog-bar" style="width:0%"></div></div>
+  <div id="tabs">
+    <button class="tab-btn active" onclick="go('home')">Início</button>
+    <button class="tab-btn" onclick="go('reg')">Registrar</button>
+    <button class="tab-btn" onclick="go('ext')">Extrato</button>
+    <button class="tab-btn" onclick="go('graf')">Gráfico</button>
+    <button class="tab-btn" onclick="go('marc')">Marcos</button>
+    <button class="tab-btn" onclick="go('recv')">A Receber</button>
+    <button class="tab-btn" onclick="go('cal')">Calendário</button>
+    <button class="tab-btn" onclick="go('reg2')">Regras</button>
+    <button class="tab-btn" onclick="go('bkp')">Backup</button>
+  </div>
+</div>
+
+<div id="main">
+  <!-- HOME -->
+  <div id="p-home" class="panel active">
+    <div id="alerta" class="alert alert-info"><div class="alert-emoji">📊</div><div class="alert-msg">Carregando...</div></div>
+    <div class="card">
+      <div class="card-lbl">Saldo semanal — toda segunda-feira</div>
+      <div style="font-size:12px;color:var(--sub);margin-bottom:10px">Total de todas as contas + cofres agora.</div>
+      <div class="field"><input type="number" id="sw-val" placeholder="Ex: 12430.50" inputmode="decimal"></div>
+      <div style="height:8px"></div>
+      <button class="btn btn-bl" onclick="addSemanal()">Salvar saldo desta semana</button>
+      <div id="sw-list" style="margin-top:12px"></div>
+    </div>
+    <div class="card" id="fat-card">
+      <div class="card-lbl">Faturas dos cartões</div>
+      <div id="fat-list"></div>
+      <div class="footer-info">Datas automáticas. Atualize o valor quando a fatura fechar.</div>
+    </div>
+    <div id="meta-mes-card" class="meta-mes card"></div>
+    <div id="streak-box" class="streak-box"></div>
+    <div id="recv-home"></div>
+    <div class="grid2" id="stats-grid"></div>
+  </div>
+
+  <!-- REGISTRAR -->
+  <div id="p-reg" class="panel">
+    <div class="card">
+      <div class="card-lbl">Novo aporte</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div class="field"><div class="field-lbl">Valor (R$)</div><input type="number" id="ap-val" placeholder="Ex: 1,00" inputmode="decimal"><div id="ap-err" class="err-msg" style="display:none"></div></div>
+        <div class="field"><div class="field-lbl">Destino</div><select id="ap-cofre"></select></div>
+        <div class="grid2">
+          <div class="field"><div class="field-lbl">Data</div><input type="date" id="ap-data"></div>
+          <div class="field"><div class="field-lbl">Nota</div><input type="text" id="ap-nota" placeholder="opcional"></div>
+        </div>
+        <button class="btn btn-gr" onclick="addAporte()">Registrar aporte</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-lbl">Atualizar saldo do cofre</div>
+      <div style="font-size:12px;color:var(--sub);margin-bottom:10px">Anote o saldo atual para checar rendimento.</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div class="grid2">
+          <div class="field"><div class="field-lbl">Cofre</div><select id="sl-cofre"></select></div>
+          <div class="field"><div class="field-lbl">Data</div><input type="date" id="sl-data"></div>
+        </div>
+        <div class="field"><div class="field-lbl">Saldo atual (R$)</div><input type="number" id="sl-val" placeholder="Valor exato do app" inputmode="decimal"><div id="sl-err" class="err-msg" style="display:none"></div></div>
+        <button class="btn btn-bl" onclick="addSaldo()">Salvar saldo</button>
+      </div>
+    </div>
+    <div class="card"><div class="card-lbl">Saldos atuais por cofre</div><div id="cofres-list"></div></div>
+  </div>
+
+  <!-- EXTRATO -->
+  <div id="p-ext" class="panel"><div id="ext-list"></div></div>
+
+  <!-- GRÁFICO -->
+  <div id="p-graf" class="panel">
+    <div style="display:flex;gap:16px;font-size:12px;color:var(--sub)">
+      <span>— — projetado</span><span style="color:var(--gr)">—— real</span>
+    </div>
+    <div class="card"><div id="chartWrap"><svg id="chart-svg" class="chart"></svg></div><div class="footer-info">Projeção: aporte de R$1.871/mês → R$100K em Ago/29. Linha laranja = prazo. Seus saldos semanais aparecem em verde.</div></div>
+    <div class="card"><div class="card-lbl">Por destino</div><div id="cofre-bars"></div></div>
+  </div>
+
+  <!-- MARCOS -->
+  <div id="p-marc" class="panel"><div id="marc-list"></div></div>
+
+  <!-- A RECEBER -->
+  <div id="p-recv" class="panel">
+    <!-- Reembolsos da empresa -->
+    <div style="font-size:11px;color:var(--sub);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Empresa / Família me deve</div>
+    <div id="reimb-total"></div>
+    <div id="reimb-pend-list"></div>
+    <button class="btn btn-bl" id="btn-add-reimb" onclick="document.getElementById('form-reimb').style.display='block';this.style.display='none'">+ Registrar gasto da empresa no meu cartão</button>
+    <div id="form-reimb" style="display:none">
+      <div class="card">
+        <div class="card-lbl">Gasto da empresa pago no meu cartão</div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div class="field"><div class="field-lbl">Descrição</div><input type="text" id="rb-desc" placeholder="Ex: Hospital Unimed — parto"></div>
+          <div class="grid2">
+            <div class="field"><div class="field-lbl">Valor (R$)</div><input type="number" id="rb-val" placeholder="Ex: 583,33" inputmode="decimal"></div>
+            <div class="field"><div class="field-lbl">Quem deve</div><select id="rb-quem"><option value="Empresa">Empresa</option><option value="Pais">Pais</option><option value="Outro">Outro</option></select></div>
+          </div>
+          <div class="field"><div class="field-lbl">Parcelas (opcional)</div><input type="text" id="rb-parc" placeholder="Ex: 4x de R$583,33"></div>
+          <div class="grid2">
+            <button class="btn btn-gr" onclick="addReembolso()">Salvar</button>
+            <button class="btn" style="background:var(--neu);color:var(--sub)" onclick="document.getElementById('form-reimb').style.display='none';document.getElementById('btn-add-reimb').style.display='block'">Cancelar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="reimb-rec-list"></div>
+    <div style="height:8px;border-top:.5px solid var(--bdr);margin:4px 0 8px"></div>
+    <div style="font-size:11px;color:var(--sub);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Pessoas que me devem</div>
+    <button class="btn btn-bl" id="btn-add-dev" onclick="toggleAddDev()">+ Adicionar pessoa que me deve</button>
+    <div id="add-dev-form" style="display:none">
+      <div class="card">
+        <div class="card-lbl">Novo devedor</div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div class="field"><div class="field-lbl">Nome</div><input type="text" id="dv-nome" placeholder="Ex: Cleiton"></div>
+          <div class="grid2">
+            <div class="field"><div class="field-lbl">Total devido (R$)</div><input type="number" id="dv-total" placeholder="Ex: 814,10" inputmode="decimal"></div>
+            <div class="field"><div class="field-lbl">Parcela (R$)</div><input type="number" id="dv-parc" placeholder="Ex: 100,00" inputmode="decimal"></div>
+          </div>
+          <div class="field"><div class="field-lbl">Dia fixo de pagamento</div><input type="number" id="dv-dia" placeholder="Ex: 10" min="1" max="31" inputmode="numeric"></div>
+          <div id="dv-err" class="err-msg" style="display:none"></div>
+          <div class="grid2">
+            <button class="btn btn-gr" onclick="addDevedor()">Salvar</button>
+            <button class="btn" style="background:var(--neu);color:var(--sub)" onclick="toggleAddDev()">Cancelar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="dev-list"></div>
+    <div id="dev-total"></div>
+  </div>
+
+  <!-- CALENDÁRIO -->
+  <div id="p-cal" class="panel">
+    <div class="card">
+      <div class="card-lbl" id="cal-titulo">Calendário financeiro</div>
+      <div id="cal-lista"></div>
+      <div id="form-add-conta"></div>
+    </div>
+  </div>
+
+  <!-- REGRAS -->
+  <div id="p-reg2" class="panel"><div id="regras-list"></div></div>
+
+  <!-- BACKUP -->
+  <div id="p-bkp" class="panel">
+    <div class="card">
+      <div class="card-lbl">Exportar dados</div>
+      <div style="font-size:13px;color:var(--sub);margin-bottom:12px;line-height:1.6">Salva um arquivo JSON com todos os seus dados. Guarde em local seguro (Drive, WhatsApp para si mesmo, etc).</div>
+      <button class="btn btn-gr" onclick="exportData()">⬇ Exportar backup</button>
+    </div>
+    <div class="card">
+      <div class="card-lbl">Importar dados</div>
+      <div style="font-size:13px;color:var(--sub);margin-bottom:12px;line-height:1.6">Restaura dados de um backup anterior. <strong>Atenção:</strong> substitui todos os dados atuais.</div>
+      <input type="file" id="import-file" accept=".json" onchange="importData(event)" style="font-size:13px;padding:8px">
+    </div>
+    <div class="card">
+      <div class="card-lbl">Como instalar no celular</div>
+      <div style="font-size:13px;color:var(--sub);line-height:1.8">
+        <b>Android (Chrome):</b><br>Menu ⋮ → "Adicionar à tela inicial"<br><br>
+        <b>iPhone (Safari):</b><br>Botão compartilhar □↑ → "Adicionar à Tela de Início"<br><br>
+        O app abre como um aplicativo normal, sem barra do navegador.
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── DADOS ────────────────────────────────────────────────
+const META=100000,PAT_INICIAL=8749,RENDA=8600,FIXAS=2181;
+const META_MES=38; // Agosto/2029 = mês 38 a partir de Jun/26
+const META_LABEL='Ago/29';
+const DATA_INICIO=new Date(2026,5,1);
+const MESES=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+const PARC=[{r:5,v:112},{r:3,v:79.9},{r:2,v:83.16},{r:4,v:61.47},{r:8,v:304.89},{r:10,v:68.46},{r:4,v:34.51},{r:3,v:52.36},{r:3,v:50.66},{r:2,v:58.19},{r:11,v:251.83},{r:10,v:77.72},{r:15,v:88.82},{r:15,v:141.86},{r:6,v:48.52},{r:3,v:19.60},{r:2,v:37.70},{r:9,v:58.60},{r:3,v:38.74},{r:4,v:39.89}];
+const COFRES=[{id:'meli',nome:'Meli Dólar',emoji:'💵'},{id:'cofrinho',nome:'Cofrinho MP',emoji:'🐷'},{id:'gcb',nome:'GCB Investimento',emoji:'📈'},{id:'sicoob',nome:'Sicoob',emoji:'🏦'},{id:'nubank',nome:'Nubank',emoji:'💜'},{id:'outros',nome:'Outros',emoji:'💰'}];
+const MARCOS_DEF=[{v:20000,l:'Reserva de emergência',d:'Nenhum imprevisto volta pro cartão.',c:'#1D9E75'},{v:50000,l:'Meio caminho',d:'Enzo tem 10 anos. Ana Luiza 8. Maria Isabele 3.',c:'#185FA5'},{v:100000,l:'Meta principal 🎯',d:'A meta que você definiu. Base para o próximo nível.',c:'#BA7517'},{v:150000,l:'Patrimônio relevante',d:'Capital que começa a gerar renda passiva real.',c:'#9b27af'},{v:200000,l:'Dois séculos',d:'Enzo começa a faculdade. Você já construiu algo.',c:'#c0392b'},{v:300000,l:'Patrimônio sólido',d:'Liberdade de decisão. Você escolhe, não o cartão.',c:'#2c3e50'},{v:500000,l:'Meio milhão',d:'Renda passiva cobre seus custos fixos.',c:'#1a7a4a'}];
+const REGRAS_DEF=[{n:'01',t:'Aporte automático no dia 05',d:'Pró-labore entrou → aporte sai antes de qualquer gasto. Pague-se primeiro.',c:'#1D9E75'},{n:'02',t:'Zero novos parcelamentos',d:'20 parcelamentos ativos. Cada compra nova = mais 10–18 meses de sangria.',c:'#A32D2D'},{n:'03',t:'Fatura sempre no total',d:'Nunca o mínimo, nunca parcelar fatura. 15,89%/mês destrói qualquer investimento.',c:'#BA7517'},{n:'04',t:'Reserva intocável de R$20K',d:'Ao atingir R$20K esse valor é piso. Só emergência real o toca.',c:'#1D9E75'},{n:'05',t:'Revisão toda segunda-feira',d:'Anote os saldos. Veja se está na frente ou atrás da meta.',c:'#185FA5'},{n:'06',t:'Regra das 48h no ML/Amazon',d:'Antes de qualquer compra não essencial: espere 48h.',c:'#A32D2D'}];
+
+// ─── STATE ─────────────────────────────────────────────────
+let S={
+  aportes:[],saldos:{},semanais:[],devedores:[],
+  reembolsos:[],
+  contasFixas:[
+    {id:'unimed',nome:'Unimed',dia:30,valor:544.56,emoji:'🏥',pagoMes:null},
+    {id:'enel',nome:'Energia Enel',dia:15,valor:115,emoji:'⚡',pagoMes:null},
+    {id:'internet',nome:'Internet Sobral Net',dia:15,valor:79.99,emoji:'📶',pagoMes:null},
+    {id:'recarga',nome:'Recarga Claro',dia:20,valor:30,emoji:'📱',pagoMes:null}
+  ],
+  faturas:[
+    {id:'nu',nome:'Nubank',dia:14,valor:1345,pagoMes:null},
+    {id:'mp',nome:'Mercado Pago',dia:7,valor:2437,pagoMes:null},
+    {id:'sant',nome:'Santander Elite',dia:23,valor:1757,pagoMes:null}
+  ]
+};
+
+// ─── SUPABASE SYNC ─────────────────────────────────────────
+const SB_URL="https://ewvrymlohdtijhzefmlw.supabase.co";
+const SB_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV3dnJ5bWxvaGR0aWpoemVmbWx3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA3MzA0NDYsImV4cCI6MjA5NjMwNjQ0Nn0.EpG3lXm89zaf-9ufAxxRiKm5AAFcubOL84dbe_4Stq4";
+const SB_ROW="bruno_regis";
+let syncTimer=null;
+
+function syncBar(msg,color){
+  const el=document.getElementById('sync-bar');
+  if(!el)return;
+  el.innerHTML=msg;el.style.color=color||'var(--bl)';
+  const bg=color==='var(--gr)'?'var(--gr-bg)':color==='var(--rd)'?'var(--rd-bg)':color==='var(--am)'?'var(--am-bg)':'var(--bl-bg)';
+  el.style.background=bg;
+  el.style.borderBottomColor=color||'var(--bl-bdr)';
+}
+
+function mergeState(parsed){
+  S.aportes=parsed.aportes||[];
+  S.saldos=parsed.saldos||{};
+  S.semanais=parsed.semanais||[];
+  S.devedores=parsed.devedores||[];
+  S.faturas=parsed.faturas||S.faturas;
+  S.contasFixas=parsed.contasFixas||S.contasFixas;
+  S.reembolsos=parsed.reembolsos||[];
+}
+
+async function saveToSupabase(){
+  try{
+    syncBar('⟳ Salvando na nuvem...');
+    const res=await fetch(SB_URL+'/rest/v1/meta100k_estado',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Prefer':'resolution=merge-duplicates'},
+      body:JSON.stringify({id:SB_ROW,data:S,updated_at:new Date().toISOString()})
+    });
+    if(res.ok){syncBar('✓ Sincronizado — '+new Date().toLocaleTimeString('pt-BR'),'var(--gr)');}
+    else{syncBar('⚠ Erro ao salvar na nuvem','var(--rd)');}
+  }catch(e){syncBar('⚠ Offline — salvo só localmente','var(--am)');}
+}
+
+async function loadFromSupabase(){
+  try{
+    syncBar('⟳ Buscando dados da nuvem...');
+    const res=await fetch(SB_URL+'/rest/v1/meta100k_estado?id=eq.'+SB_ROW,{
+      headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY}
+    });
+    if(!res.ok)throw new Error();
+    const rows=await res.json();
+    if(rows&&rows.length>0&&rows[0].data){
+      mergeState(rows[0].data);
+      localStorage.setItem('m100k_v3',JSON.stringify(S));
+      syncBar('✓ Sincronizado — '+new Date().toLocaleTimeString('pt-BR'),'var(--gr)');
+      return true;
+    }
+    syncBar('✓ Pronto (primeiro acesso)','var(--gr)');
+    return false;
+  }catch(e){
+    syncBar('⚠ Offline — usando dados locais','var(--am)');
+    return false;
+  }
+}
+
+function save(){
+  try{localStorage.setItem('m100k_v3',JSON.stringify(S));}catch(e){}
+  if(syncTimer)clearTimeout(syncTimer);
+  syncTimer=setTimeout(saveToSupabase,1500);
+}
+
+function load(){
+  try{
+    const d=localStorage.getItem('m100k_v3');
+    if(d){mergeState(JSON.parse(d));}
+  }catch(e){}
+}
+
+// ─── HELPERS ───────────────────────────────────────────────
+function brl(v){return'R$\u00a0'+Number(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function hoje(){return new Date().toISOString().split('T')[0];}
+function fmtD(d){return d?d.split('-').reverse().join('/'):'—';}
+function mesLabel(i){const d=new Date(DATA_INICIO.getFullYear(),DATA_INICIO.getMonth()+i,1);return MESES[d.getMonth()]+'/'+String(d.getFullYear()).slice(2);}
+function mesIdx(){const n=new Date();return Math.max(0,Math.min(119,(n.getFullYear()-2026)*12+(n.getMonth()-5)));}
+// Aporte fixo de R$1.871/mês = valor exato necessário para PAT_INICIAL → R$100K em 38 meses a 1%a.m.
+const APORTE_META = 1871;
+function buildProj(){const p=[];let acc=PAT_INICIAL;for(let i=0;i<120;i++){acc=acc*1.01+APORTE_META;p.push(Math.round(acc));}return p;}
+const PROJ=buildProj();
+const LABELS=Array.from({length:120},(_,i)=>mesLabel(i));
+
+function patrimonioAtual(){
+  const rec={};Object.values(S.saldos).forEach(s=>{if(!rec[s.cofre]||s.data>rec[s.cofre].data)rec[s.cofre]=s;});
+  return Object.values(rec).reduce((s,v)=>s+v.valor,0);
+}
+function totalAportado(){return S.aportes.reduce((s,a)=>s+a.valor,0);}
+function aportePorCofre(){const m={};S.aportes.forEach(a=>{m[a.cofre]=(m[a.cofre]||0)+a.valor;});return m;}
+function saldosPorCofre(){const m={};Object.values(S.saldos).forEach(s=>{if(!m[s.cofre]||s.data>m[s.cofre].data)m[s.cofre]=s;});return m;}
+function totalReceber(){return S.devedores.reduce((s,d)=>s+(d.total-d.pago),0);}
+
+// ─── ALERTA ────────────────────────────────────────────────
+function gerarAlerta(pat,proj){
+  const n=new Date(),dh=n.getDate(),dow=n.getDay();
+  const mesAtual=`${n.getMonth()}_${n.getFullYear()}`;
+  const cartoes=[{nome:'Nubank',dia:14,id:'nu'},{nome:'Mercado Pago',dia:7,id:'mp'},{nome:'Santander',dia:23,id:'sant'}];
+  for(const c of cartoes){
+    const fat=S.faturas.find(f=>f.id===c.id);
+    if(fat?.pagoMes===mesAtual)continue; // já pago, não alerta
+    let dias=c.dia-dh;if(dias<0)dias+=30;
+    if(dias<=3)return{tipo:'danger',e:'⚠️',m:`Fatura ${c.nome} vence ${dias===0?'hoje':'em '+dias+' dia'+(dias>1?'s':'')}.`};
+  }
+  if(dow===1&&!S.semanais.some(s=>s.data===hoje()))return{tipo:'info',e:'📊',m:'Segunda-feira. Hora de anotar os saldos das suas contas.'};
+  const d=pat-(proj||PAT_INICIAL);
+  if(d>2000)return{tipo:'success',e:'🚀',m:`R$${Math.round(d).toLocaleString('pt-BR')} à frente da projeção. Enzo, Ana Luiza e Maria Isabele herdam esse exemplo.`};
+  if(d>0)return{tipo:'success',e:'✅',m:`No caminho certo. Cada R$1,00 guardado conta.`};
+  if(d>-2000)return{tipo:'warn',e:'👀',m:`Levemente abaixo da projeção. Revisa os gastos antes de qualquer compra nova.`};
+  return{tipo:'danger',e:'🔴',m:`Abaixo da projeção em R$${Math.round(Math.abs(d)).toLocaleString('pt-BR')}. Congela compras não essenciais.`};
+}
+
+// ─── AÇÕES ─────────────────────────────────────────────────
+function addAporte(){
+  const val=parseFloat(document.getElementById('ap-val').value);
+  const err=document.getElementById('ap-err');
+  if(isNaN(val)||val<=0){err.textContent='Valor inválido.';err.style.display='block';return;}
+  err.style.display='none';
+  S.aportes.push({id:Date.now(),cofre:document.getElementById('ap-cofre').value,valor:val,data:document.getElementById('ap-data').value,nota:document.getElementById('ap-nota').value.trim()});
+  document.getElementById('ap-val').value='';document.getElementById('ap-nota').value='';
+  save();render();
+}
+function addSaldo(){
+  const val=parseFloat(document.getElementById('sl-val').value);
+  const err=document.getElementById('sl-err');
+  if(isNaN(val)||val<0){err.textContent='Valor inválido.';err.style.display='block';return;}
+  err.style.display='none';
+  const cofre=document.getElementById('sl-cofre').value,data=document.getElementById('sl-data').value;
+  S.saldos[cofre+'_'+data]={cofre,valor:val,data,ts:Date.now()};
+  document.getElementById('sl-val').value='';
+  save();render();
+}
+function addSemanal(){
+  const val=parseFloat(document.getElementById('sw-val').value);
+  if(isNaN(val)||val<0)return;
+  S.semanais.push({id:Date.now(),total:val,data:hoje()});
+  document.getElementById('sw-val').value='';
+  save();render();
+}
+function addDevedor(){
+  const nome=document.getElementById('dv-nome').value.trim();
+  const total=parseFloat(document.getElementById('dv-total').value);
+  const parc=parseFloat(document.getElementById('dv-parc').value);
+  const dia=parseInt(document.getElementById('dv-dia').value);
+  const err=document.getElementById('dv-err');
+  if(!nome||isNaN(total)||isNaN(parc)||isNaN(dia)||dia<1||dia>31){err.textContent='Preencha todos os campos.';err.style.display='block';return;}
+  err.style.display='none';
+  S.devedores.push({id:Date.now(),nome,total,parc,dia,pago:0,pagamentos:[]});
+  document.getElementById('dv-nome').value='';document.getElementById('dv-total').value='';document.getElementById('dv-parc').value='';document.getElementById('dv-dia').value='';
+  toggleAddDev();save();render();
+}
+function registrarPgto(id){
+  const d=S.devedores.find(x=>x.id===id);if(!d)return;
+  const v=Math.min(d.parc,d.total-d.pago);if(v<=0)return;
+  d.pago+=v;d.pagamentos.push({val:v,data:hoje()});
+  save();render();
+}
+function delDevedor(id){if(confirm('Remover devedor?')){S.devedores=S.devedores.filter(x=>x.id!==id);save();render();}}
+function delAporte(id){S.aportes=S.aportes.filter(a=>a.id!==id);save();render();}
+function mesFaturaAtual(dia){
+  // Mês de referência da fatura: se hoje já passou do dia de vencimento, é o mês atual; senão é o mês atual também
+  const n=new Date();
+  return `${n.getMonth()}_${n.getFullYear()}`;
+}
+function marcarContaPaga(id){
+  const mes=mesFaturaAtual();
+  S.contasFixas=S.contasFixas.map(c=>c.id===id?{...c,pagoMes:mes,pagoData:hoje()}:c);
+  save();renderCalendario();
+}
+function editConta(id){
+  const c=S.contasFixas.find(x=>x.id===id);if(!c)return;
+  const v=prompt('Novo valor de '+c.nome+':',c.valor);
+  if(v===null)return;const n=parseFloat(v.replace(',','.'));
+  if(isNaN(n)||n<0)return;
+  S.contasFixas=S.contasFixas.map(x=>x.id===id?{...x,valor:n}:x);
+  save();renderCalendario();
+}
+function delConta(id){
+  if(!confirm('Remover esta conta fixa?'))return;
+  S.contasFixas=S.contasFixas.filter(x=>x.id!==id);
+  save();renderCalendario();
+}
+function addContaFixa(){
+  const nome=document.getElementById('cf-nome').value.trim();
+  const dia=parseInt(document.getElementById('cf-dia').value);
+  const val=parseFloat(document.getElementById('cf-val').value.replace(',','.'));
+  const emoji=document.getElementById('cf-emoji').value||'📄';
+  if(!nome||isNaN(dia)||dia<1||dia>31||isNaN(val)){alert('Preencha todos os campos.');return;}
+  S.contasFixas.push({id:'cf_'+Date.now(),nome,dia,valor:val,emoji,pagoMes:null});
+  document.getElementById('cf-nome').value='';document.getElementById('cf-dia').value='';document.getElementById('cf-val').value='';
+  save();renderCalendario();
+}
+function marcarPago(id){
+  S.faturas=S.faturas.map(f=>f.id===id?{...f,pagoMes:mesFaturaAtual(f.dia),pagoData:hoje()}:f);
+  save();render();
+}
+function editFatura(id){
+  const f=S.faturas.find(x=>x.id===id);if(!f)return;
+  const v=prompt(`Novo valor da fatura ${f.nome}:`,f.valor);
+  if(v===null)return;const n=parseFloat(v.replace(',','.'));
+  if(isNaN(n)||n<0)return;
+  f.valor=n;f.atualizado=hoje();save();render();
+}
+function toggleAddDev(){
+  const f=document.getElementById('add-dev-form');
+  f.style.display=f.style.display==='none'?'block':'none';
+}
+function exportData(){
+  const blob=new Blob([JSON.stringify(S,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='meta100k_backup_'+hoje()+'.json';a.click();
+}
+function importData(evt){
+  const file=evt.target.files[0];if(!file)return;
+  const r=new FileReader();
+  r.onload=e=>{try{const d=JSON.parse(e.target.result);if(d.aportes&&d.faturas){S=d;save();render();alert('Dados importados com sucesso!');}}catch(ex){alert('Arquivo inválido.');}};
+  r.readAsText(file);
+}
+
+
+// ─── STREAK ─────────────────────────────────────────────────
+function calcStreak(){
+  if(!S.semanais.length)return 0;
+  function semanaInicio(dateStr){
+    const d=new Date(dateStr+'T12:00:00');
+    const dow=d.getDay();
+    const diff=dow===0?-6:1-dow;
+    d.setDate(d.getDate()+diff);
+    return d.toISOString().split('T')[0];
+  }
+  const semanas=new Set(S.semanais.map(s=>semanaInicio(s.data)));
+  let streak=0,check=new Date();
+  for(let i=0;i<52;i++){
+    const sw=semanaInicio(check.toISOString().split('T')[0]);
+    if(semanas.has(sw)){streak++;}
+    else if(i>0){break;}
+    check.setDate(check.getDate()-7);
+  }
+  return streak;
+}
+
+// ─── META MENSAL ─────────────────────────────────────────────
+function aporteMesAtual(){
+  const n=new Date();
+  return S.aportes.filter(a=>{
+    const d=new Date(a.data+'T00:00:00');
+    return d.getMonth()===n.getMonth()&&d.getFullYear()===n.getFullYear();
+  }).reduce((s,a)=>s+a.valor,0);
+}
+
+// ─── CALENDÁRIO ──────────────────────────────────────────────
+function renderCalendario(){
+  const n=new Date(),dh=n.getDate();
+  const mesAtual=`${n.getMonth()}_${n.getFullYear()}`;
+  const nomeMes=MESES[n.getMonth()]+'/'+String(n.getFullYear()).slice(2);
+  document.getElementById('cal-titulo').textContent='Calendário — '+nomeMes;
+
+  const eventos=[];
+  // Renda
+  eventos.push({dia:5,icon:'💰',nome:'Pró-labore (1ª parcela)',val:'+'+brl(4000),tipo:'renda',pago:false,acao:''});
+  eventos.push({dia:20,icon:'💰',nome:'Pró-labore (2ª parcela)',val:'+'+brl(4000),tipo:'renda',pago:false,acao:''});
+  // Faturas cartão
+  S.faturas.forEach(f=>{
+    const pago=f.pagoMes===mesAtual;
+    eventos.push({dia:f.dia,icon:'💳',nome:f.nome,val:'-'+brl(f.valor),tipo:'fatura',pago,acao:pago?'':`<button class="btn-ghost" style="padding:2px 7px;font-size:10px;color:var(--gr);border-color:var(--gr-bdr);background:var(--gr-bg)" onclick="marcarPago('${f.id}');renderCalendario()">✓ Paguei</button>`});
+  });
+  // Contas fixas
+  S.contasFixas.forEach(c=>{
+    const pago=c.pagoMes===mesAtual;
+    eventos.push({dia:c.dia,icon:c.emoji,nome:c.nome,val:'-'+brl(c.valor),tipo:'conta',pago,
+      acao:pago?`<span style="font-size:10px;color:var(--sub)">✓ ${fmtD(c.pagoData||'')}</span>`
+      :`<button class="btn-ghost" style="padding:2px 7px;font-size:10px;color:var(--gr);border-color:var(--gr-bdr);background:var(--gr-bg)" onclick="marcarContaPaga('${c.id}')">✓ Paguei</button>`,
+      extra:`<button onclick="editConta('${c.id}')" style="background:none;border:none;cursor:pointer;font-size:11px;color:var(--sub);padding:0 2px">editar</button><button onclick="delConta('${c.id}')" style="background:none;border:none;cursor:pointer;font-size:11px;color:var(--sub);padding:0 2px">×</button>`});
+  });
+  // Devedores
+  S.devedores.forEach(d=>{
+    if(d.total-d.pago>0)eventos.push({dia:d.dia,icon:'👤',nome:d.nome,val:'+'+brl(d.parc),tipo:'receber',pago:false,acao:''});
+  });
+  // Aporte meta
+  eventos.push({dia:5,icon:'📈',nome:'Aporte meta (R$1.871)',val:'',tipo:'meta',pago:false,acao:''});
+
+  eventos.sort((a,b)=>a.dia===b.dia?0:a.dia-b.dia);
+
+  const totalContas=S.contasFixas.reduce((s,c)=>s+c.valor,0);
+  const totalFaturas=S.faturas.reduce((s,f)=>s+f.valor,0);
+  const totalSaidas=totalContas+totalFaturas;
+
+  document.getElementById('cal-lista').innerHTML=eventos.map(e=>{
+    const passado=e.dia<dh;const ehHoje=e.dia===dh;
+    const diaClass=ehHoje?'cal-dia hoje':passado?'cal-dia passado':'cal-dia';
+    const corVal=e.tipo==='renda'||e.tipo==='receber'?'var(--gr)':e.tipo==='meta'?'var(--bl)':'var(--rd)';
+    const nomeStyle='font-size:13px;font-weight:500;color:var(--ink)';
+    const pagoBadge=e.pago?'<span style="font-size:10px;background:var(--gr-bg);color:var(--gr);border:.5px solid var(--gr-bdr);border-radius:10px;padding:1px 7px;margin-right:4px">✓ pago</span>':'';
+    return`<div class="cal-evento"><div class="${diaClass}">${e.dia}</div><div class="cal-icon">${e.icon}</div><div class="cal-info"><div style="${nomeStyle}">${pagoBadge}${e.nome}</div><div style="display:flex;gap:6px;margin-top:3px;align-items:center">${e.acao||''}${e.extra||''}</div></div><div class="cal-val" style="color:${e.val?corVal:'transparent'}">${e.val||'—'}</div></div>`;
+  }).join('')+`
+  <div style="margin-top:14px;padding-top:12px;border-top:.5px solid var(--bdr)">
+    <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--sub);margin-bottom:4px"><span>Total saídas estimadas</span><span style="color:var(--rd);font-weight:500">-${brl(totalSaidas)}</span></div>
+    <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--sub)"><span>Renda pró-labore</span><span style="color:var(--gr);font-weight:500">+${brl(8000)}</span></div>
+  </div>`;
+
+  // Form adicionar conta
+  document.getElementById('form-add-conta').innerHTML=`
+    <div style="display:flex;flex-direction:column;gap:10px;margin-top:14px;padding-top:12px;border-top:.5px solid var(--bdr)">
+      <div style="font-size:11px;color:var(--sub);text-transform:uppercase;letter-spacing:.5px">Adicionar conta fixa</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div class="field"><div class="field-lbl">Nome</div><input type="text" id="cf-nome" placeholder="Ex: Saae"></div>
+        <div class="field"><div class="field-lbl">Emoji</div><input type="text" id="cf-emoji" placeholder="💧" maxlength="2" style="text-align:center;font-size:18px"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div class="field"><div class="field-lbl">Dia do mês</div><input type="number" id="cf-dia" placeholder="Ex: 10" min="1" max="31" inputmode="numeric"></div>
+        <div class="field"><div class="field-lbl">Valor (R$)</div><input type="number" id="cf-val" placeholder="Ex: 64,86" inputmode="decimal"></div>
+      </div>
+      <button class="btn btn-bl" onclick="addContaFixa()">+ Adicionar</button>
+    </div>`;
+}
+
+// ─── REEMBOLSOS ──────────────────────────────────────────────
+function addReembolso(){
+  const desc=document.getElementById('rb-desc').value.trim();
+  const val=parseFloat(document.getElementById('rb-val').value.replace(',','.'));
+  const quem=document.getElementById('rb-quem').value;
+  const parc=document.getElementById('rb-parc').value.trim();
+  if(!desc||isNaN(val)||val<=0){alert('Preencha descrição e valor.');return;}
+  S.reembolsos.push({id:Date.now(),desc,valor:val,quem,parcelas:parc||null,status:'pendente',data:hoje(),dataRec:null});
+  document.getElementById('rb-desc').value='';document.getElementById('rb-val').value='';document.getElementById('rb-parc').value='';
+  document.getElementById('form-reimb').style.display='none';
+  document.getElementById('btn-add-reimb').style.display='block';
+  save();renderReembolsos();
+}
+function marcarRecebido(id){
+  S.reembolsos=S.reembolsos.map(r=>r.id===id?{...r,status:'recebido',dataRec:hoje()}:r);
+  save();renderReembolsos();
+}
+function delReembolso(id){
+  if(!confirm('Remover?'))return;
+  S.reembolsos=S.reembolsos.filter(r=>r.id!==id);
+  save();renderReembolsos();
+}
+function renderReembolsos(){
+  const pendentes=S.reembolsos.filter(r=>r.status==='pendente');
+  const recebidos=S.reembolsos.filter(r=>r.status==='recebido');
+  const totalPend=pendentes.reduce((s,r)=>s+r.valor,0);
+  const tagClass={Empresa:'tag tag-emp',Pais:'tag tag-pais',Outro:'tag tag-outro'};
+
+  document.getElementById('reimb-total').innerHTML=totalPend>0
+    ?`<div style="background:var(--am-bg);border:.5px solid var(--am-bdr);border-radius:8px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><span style="font-size:13px;color:var(--sub)">Total a receber da empresa/família</span><span style="font-size:20px;font-weight:500;color:var(--am)">${brl(totalPend)}</span></div>`:'';
+
+  const renderCard=(r)=>{
+    const rec=r.status==='recebido';
+    return`<div class="reimb-card ${rec?'reimb-rec':'reimb-pend'}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
+        <div style="flex:1"><span class="${tagClass[r.quem]||'tag tag-outro'}">${r.quem}</span><span style="font-size:13px;font-weight:500">${r.desc}</span></div>
+        <div style="font-size:16px;font-weight:500;color:${rec?'var(--gr)':'var(--am)'};margin-left:8px">${brl(r.valor)}</div>
+      </div>
+      ${r.parcelas?`<div style="font-size:11px;color:var(--sub);margin-bottom:4px">Parcelas: ${r.parcelas}</div>`:''}
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div style="font-size:11px;color:var(--sub)">${rec?`✓ Recebido em ${fmtD(r.dataRec)}`:`Registrado em ${fmtD(r.data)}`}</div>
+        <div style="display:flex;gap:6px">
+          ${!rec?`<button class="btn-sm btn-sm-gr" onclick="marcarRecebido(${r.id})">Recebi</button>`:''}
+          <button class="btn-sm btn-sm-ghost" onclick="delReembolso(${r.id})">×</button>
+        </div>
+      </div>
+    </div>`;
+  };
+
+  document.getElementById('reimb-pend-list').innerHTML=pendentes.length
+    ?pendentes.map(renderCard).join('')
+    :'<div style="font-size:13px;color:var(--sub);padding:8px 0">Nenhum reembolso pendente.</div>';
+
+  document.getElementById('reimb-rec-list').innerHTML=recebidos.length
+    ?`<div style="font-size:11px;color:var(--sub);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Já recebidos</div>`+recebidos.map(renderCard).join(''):'';
+}
+// ─── RENDER ────────────────────────────────────────────────
+function render(){
+  const pat=patrimonioAtual();
+  const pct=Math.min(100,(pat/META)*100);
+  const proj=PROJ[mesIdx()]||PAT_INICIAL;
+  const al=gerarAlerta(pat,proj);
+
+  // Header
+  document.getElementById('h-pat').textContent=brl(pat);
+  document.getElementById('h-pct').textContent=pct.toFixed(1)+'% · prazo '+META_LABEL;
+  document.getElementById('prog-bar').style.width=pct+'%';
+
+  // Alerta
+  const ae=document.getElementById('alerta');
+  ae.className='alert alert-'+al.tipo;
+  ae.innerHTML=`<div class="alert-emoji">${al.e}</div><div class="alert-msg">${al.m}</div>`;
+
+  // Semanal list
+  const swl=[...S.semanais].reverse().slice(0,5);
+  document.getElementById('sw-list').innerHTML=swl.length?swl.map((s,i,arr)=>{
+    const prev=arr[i+1]?.total||PAT_INICIAL;const delta=s.total-prev;
+    return`<div class="row"><span style="color:var(--sub)">${fmtD(s.data)}</span><span style="font-weight:500">${brl(s.total)}</span><span style="font-size:11px;color:${delta>=0?'var(--gr)':'var(--rd)'}">${delta>=0?'+':''}${brl(delta)}</span></div>`;
+  }).join(''):'';
+
+  // Faturas
+  const n=new Date(),dh=n.getDate();
+  const mesAtual=`${n.getMonth()}_${n.getFullYear()}`;
+  document.getElementById('fat-list').innerHTML=S.faturas.map(f=>{
+    let dias=f.dia-dh;if(dias<0)dias+=30;
+    const pago=f.pagoMes===mesAtual;
+    const cor=pago?'var(--gr)':dias<=3?'var(--rd)':dias<=7?'var(--am)':'var(--ink)';
+    const diasTxt=pago?`✓ Pago${f.pagoData?' em '+fmtD(f.pagoData):''}`:dias===0?'Hoje':dias===1?'Amanhã':dias+' dias';
+    return`<div class="row"><div><div class="row-main">${f.nome}</div><div class="row-sub">Dia ${f.dia}${f.atualizado?' · atualizado '+fmtD(f.atualizado):' · estimado'}</div></div><div style="text-align:right"><div style="font-size:13px;font-weight:500;color:${cor}">${diasTxt}</div><div style="display:flex;align-items:center;gap:6px;justify-content:flex-end;margin-top:4px">${!pago?`<button class="btn-ghost" style="padding:3px 8px;font-size:10px;background:var(--gr-bg);color:var(--gr);border-color:var(--gr-bdr)" onclick="marcarPago('${f.id}')">✓ Paguei</button>`:''}<span style="font-size:13px">${brl(f.valor)}</span><button class="btn-ghost" style="padding:2px 8px;font-size:10px" onclick="editFatura('${f.id}')">editar</button></div></div></div>`;
+  }).join('');
+
+  // A receber home
+  const tr=totalReceber();
+  document.getElementById('recv-home').innerHTML=tr>0?`<div class="card"><div class="card-lbl">A receber</div><div style="display:flex;justify-content:space-between;align-items:center"><div style="font-size:13px;color:var(--sub)">${S.devedores.filter(d=>d.total-d.pago>0).length} pessoa(s) devendo</div><div style="font-size:18px;font-weight:500;color:var(--bl)">${brl(tr)}</div></div></div>`:'';
+
+  // Stats
+  const ta=totalAportado();
+  document.getElementById('stats-grid').innerHTML=[
+    ['Falta',brl(Math.max(0,META-pat)),'var(--am)'],
+    ['Total aportado',brl(ta),'var(--gr)'],
+    ['Aportes',S.aportes.length,'var(--bl)'],
+    ['Meses',Object.keys(porMesFn()).length,'var(--ink)']
+  ].map(([l,v,c])=>`<div class="stat-box"><div class="stat-lbl">${l}</div><div class="stat-val" style="color:${c}">${v}</div></div>`).join('');
+
+  // Cofre selects
+  const cofreOpts=COFRES.map(c=>`<option value="${c.id}">${c.emoji} ${c.nome}</option>`).join('');
+  ['ap-cofre','sl-cofre'].forEach(id=>{document.getElementById(id).innerHTML=cofreOpts;});
+
+  // Cofres list
+  const spc=saldosPorCofre(),apc=aportePorCofre();
+  document.getElementById('cofres-list').innerHTML=COFRES.map(c=>{
+    const s=spc[c.id],ap=apc[c.id]||0;const rend=s?(s.valor-ap):null;
+    return`<div class="row"><div style="display:flex;align-items:center;gap:8px"><span style="font-size:18px">${c.emoji}</span><div><div class="row-main">${c.nome}</div>${rend!==null?`<div style="font-size:10px;color:${rend>=0?'var(--gr)':'var(--rd)'}">${rend>=0?'+':''}${brl(rend)} rendimento</div>`:''}</div></div><div style="text-align:right"><div style="font-size:14px;font-weight:500;color:${s?'var(--gr)':'var(--sub)'}">${s?brl(s.valor):'—'}</div>${s?`<div style="font-size:10px;color:var(--sub)">${fmtD(s.data)}</div>`:''}</div></div>`;
+  }).join('');
+
+  // Extrato
+  const pm=porMesFn();
+  const pmSorted=Object.entries(pm).sort((a,b)=>{const f=s=>{const[m,y]=s.split('/');return parseInt(y)*100+MESES.indexOf(m);};return f(b[0])-f(a[0]);});
+  document.getElementById('ext-list').innerHTML=pmSorted.length?pmSorted.map(([mes,d])=>`
+    <div style="margin-bottom:14px">
+      <div class="mes-head"><span class="mes-nome">${mes}</span><div><div class="mes-total">${brl(d.total)}</div><div class="mes-cnt">${d.count} aporte${d.count>1?'s':''}</div></div></div>
+      <div class="mes-body">${d.itens.sort((a,b)=>b.data>a.data?1:-1).map((r,i)=>{
+        const cn=COFRES.find(c=>c.id===r.cofre);
+        return`<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:${i<d.itens.length-1?'.5px solid var(--bdr)':'none'}"><div style="display:flex;align-items:center;gap:10px"><span style="font-size:18px">${cn?.emoji||'💰'}</span><div><div style="font-size:13px;font-weight:500">${cn?.nome||r.cofre}</div><div style="font-size:11px;color:var(--sub)">${fmtD(r.data)}${r.nota?' · '+r.nota:''}</div></div></div><div style="display:flex;align-items:center;gap:8px"><span style="font-size:14px;font-weight:500;color:var(--gr)">+${brl(r.valor)}</span><button onclick="delAporte(${r.id})" style="background:none;border:none;cursor:pointer;color:var(--sub);font-size:18px;padding:0 2px;line-height:1">×</button></div></div>`;
+      }).join('')}</div>
+    </div>`).join(''):'<div style="text-align:center;padding:40px 20px;color:var(--sub);font-size:14px">Nenhum aporte ainda.</div>';
+
+  // Gráfico SVG
+  drawChart(pat);
+
+  // Cofre bars
+  const taTotal=ta||1;
+  document.getElementById('cofre-bars').innerHTML=COFRES.filter(c=>apc[c.id]>0).sort((a,b)=>(apc[b.id]||0)-(apc[a.id]||0)).map(c=>{
+    const v=apc[c.id]||0;const p=(v/taTotal)*100;
+    return`<div style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px"><span>${c.emoji} ${c.nome}</span><span style="font-weight:500;color:var(--gr)">${brl(v)}</span></div><div style="background:var(--neu);border-radius:4px;height:6px;overflow:hidden"><div style="height:100%;width:${p}%;background:var(--gr);border-radius:4px"></div></div><div style="font-size:10px;color:var(--sub);margin-top:2px">${p.toFixed(1)}%</div></div>`;
+  }).join('')||'<div style="font-size:13px;color:var(--sub)">Nenhum aporte registrado.</div>';
+
+  // Marcos
+  document.getElementById('marc-list').innerHTML=MARCOS_DEF.map(m=>{
+    const hit=pat>=m.v;const pidx=PROJ.findIndex(v=>v>=m.v);const pct2=Math.min(100,(pat/m.v)*100);
+    const isPrincipal=m.v===100000;
+    const projTxt=isPrincipal?META_LABEL:(pidx>=0?LABELS[pidx]:'—');
+    const mesesTxt=isPrincipal?META_MES+' meses':(pidx>=0?pidx+' meses':'');
+    return`<div class="marco-card${hit?' marco-hit':''}" style="border-left-color:${hit?'var(--gr)':m.c}"><div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px"><div><div style="font-size:20px;font-weight:500;color:${hit?'var(--gr)':'var(--ink)'}">${brl(m.v)}</div><div style="font-size:12px;color:var(--sub)">${m.l}</div></div><div style="text-align:right">${hit?`<div style="font-size:14px;color:var(--gr);font-weight:500">✓ Atingido</div>`:`<div style="font-size:15px;font-weight:500;color:${m.c}">${projTxt}${isPrincipal?' 🎯':''}</div><div style="font-size:11px;color:var(--sub)">${mesesTxt}</div>`}</div></div><div style="background:${hit?'rgba(255,255,255,.5)':'var(--neu)'};border-radius:6px;height:8px;overflow:hidden;margin-bottom:6px"><div style="height:100%;width:${pct2}%;background:${hit?'var(--gr)':m.c};border-radius:6px;transition:width .5s"></div></div><div style="font-size:12px;color:var(--sub)">${m.d}</div></div>`;
+  }).join('');
+
+  // A Receber
+  document.getElementById('dev-list').innerHTML=S.devedores.map(d=>{
+    const rest=d.total-d.pago;const quitado=rest<=0;const pctD=(d.pago/d.total)*100;
+    return`<div class="dev-card${quitado?' dev-hit':''}"><div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px"><div><div style="font-size:16px;font-weight:500">${d.nome}</div><div style="font-size:11px;color:var(--sub)">Dia ${d.dia} · ${brl(d.parc)}/vez</div></div><div style="text-align:right">${quitado?`<div style="font-size:14px;color:var(--gr);font-weight:500">✓ Quitado</div>`:`<div style="font-size:16px;font-weight:500;color:var(--bl)">${brl(rest)}</div><div style="font-size:11px;color:var(--sub)">de ${brl(d.total)}</div>`}</div></div><div class="mini-prog"><div class="mini-bar" style="width:${pctD}%;background:${quitado?'var(--gr)':'var(--bl)'}"></div></div><div style="display:flex;justify-content:space-between;align-items:center"><div style="font-size:11px;color:var(--sub)">${d.pagamentos.length} pgto${d.pagamentos.length!==1?'s':''}${d.pagamentos.length?` · último ${fmtD(d.pagamentos[d.pagamentos.length-1].data)}`:''}</div><div style="display:flex;gap:6px">${!quitado?`<button class="btn-sm btn-sm-gr" onclick="registrarPgto(${d.id})">Recebido</button>`:''}<button class="btn-sm btn-sm-ghost" onclick="delDevedor(${d.id})">×</button></div></div></div>`;
+  }).join('')||'<div style="text-align:center;padding:32px 20px;color:var(--sub);font-size:14px">Nenhum devedor cadastrado.</div>';
+
+  const tr2=totalReceber();
+  document.getElementById('dev-total').innerHTML=tr2>0?`<div style="background:var(--bl-bg);border:.5px solid var(--bl-bdr);border-radius:8px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center"><span style="font-size:13px;color:var(--sub)">Total a receber</span><span style="font-size:18px;font-weight:500;color:var(--bl)">${brl(tr2)}</span></div>`:'';
+
+  // Regras
+  document.getElementById('regras-list').innerHTML=REGRAS_DEF.map(r=>`<div class="regra-card" style="border-left-color:${r.c}"><div class="regra-n" style="color:${r.c}">${r.n}</div><div><div class="regra-t">${r.t}</div><div class="regra-d">${r.d}</div></div></div>`).join('');
+}
+
+function porMesFn(){
+  const m={};
+  S.aportes.forEach(a=>{
+    const d=new Date(a.data+'T00:00:00');const k=MESES[d.getMonth()]+'/'+String(d.getFullYear()).slice(2);
+    if(!m[k])m[k]={total:0,count:0,itens:[]};m[k].total+=a.valor;m[k].count++;m[k].itens.push(a);
+  });return m;
+}
+
+// ─── GRÁFICO SVG ───────────────────────────────────────────
+function drawChart(pat){
+  const svg=document.getElementById('chart-svg');
+  const W=svg.clientWidth||340,H=220;
+  const pad={t:10,r:10,b:30,l:48};
+  const cW=W-pad.l-pad.r,cH=H-pad.t-pad.b;
+  const n=80; // mostrar 80 meses (~6.5 anos)
+  const maxV=Math.max(...PROJ.slice(0,n))*1.05;
+
+  const xs=i=>pad.l+(i/(n-1))*cW;
+  const ys=v=>pad.t+cH-(v/maxV)*cH;
+
+  // Grid e labels Y
+  let html='';
+  [0,100000,200000,300000,400000,500000].filter(v=>v<=maxV*1.1).forEach(v=>{
+    const y=ys(v);
+    html+=`<line x1="${pad.l}" y1="${y.toFixed(1)}" x2="${W-pad.r}" y2="${y.toFixed(1)}" stroke="#e8e4dd" stroke-width="1"/>`;
+    html+=`<text x="${pad.l-4}" y="${(y+4).toFixed(1)}" text-anchor="end" font-size="9" fill="#888">${v>=1000?(v/1000).toFixed(0)+'k':v}</text>`;
+  });
+
+  // Meta line horizontal R$100K
+  const ym=ys(100000);
+  html+=`<line x1="${pad.l}" y1="${ym.toFixed(1)}" x2="${W-pad.r}" y2="${ym.toFixed(1)}" stroke="#1D9E75" stroke-width="1" stroke-dasharray="3 3"/>`;
+  html+=`<text x="${W-pad.r-2}" y="${(ym-3).toFixed(1)}" text-anchor="end" font-size="8" fill="#1D9E75">R$100K</text>`;
+
+  // Linha vertical Ago/29 (mês 38)
+  const xMeta=xs(Math.min(META_MES,n-1));
+  html+=`<line x1="${xMeta.toFixed(1)}" y1="${pad.t}" x2="${xMeta.toFixed(1)}" y2="${(H-pad.b).toFixed(1)}" stroke="#BA7517" stroke-width="1.5" stroke-dasharray="4 3"/>`;
+  html+=`<text x="${(xMeta+3).toFixed(1)}" y="${(pad.t+10).toFixed(1)}" font-size="8" fill="#BA7517" font-weight="bold">${META_LABEL} 🎯</text>`;
+
+  // X labels (a cada 12 meses)
+  for(let i=0;i<n;i+=12){
+    html+=`<text x="${xs(i).toFixed(1)}" y="${H-4}" text-anchor="middle" font-size="9" fill="#888">${LABELS[i]}</text>`;
+  }
+
+  // Proj path
+  const projPts=Array.from({length:n},(_,i)=>PROJ[i]);
+  const projPath=projPts.map((v,i)=>`${i===0?'M':'L'}${xs(i).toFixed(1)},${ys(v).toFixed(1)}`).join(' ');
+  html+=`<path d="${projPath}" fill="none" stroke="#B5D4F4" stroke-width="1.5" stroke-dasharray="5 4"/>`;
+
+  // Real path
+  const realData=new Array(n).fill(null);
+  realData[0]=PAT_INICIAL;
+  [...S.semanais].sort((a,b)=>a.data>b.data?1:-1).forEach(s=>{
+    const d=new Date(s.data+'T00:00:00');
+    const idx=(d.getFullYear()-2026)*12+(d.getMonth()-5);
+    if(idx>0&&idx<n)realData[idx]=s.total;
+  });
+  let realPath='';let lastIdx=-1;
+  realData.forEach((v,i)=>{
+    if(v===null)return;
+    realPath+=`${lastIdx===-1||i-lastIdx>1?'M':'L'}${xs(i).toFixed(1)},${ys(v).toFixed(1)} `;
+    lastIdx=i;
+  });
+  if(realPath)html+=`<path d="${realPath}" fill="none" stroke="#1D9E75" stroke-width="2.5" stroke-linecap="round"/>`;
+  // Dots
+  realData.forEach((v,i)=>{if(v!==null)html+=`<circle cx="${xs(i).toFixed(1)}" cy="${ys(v).toFixed(1)}" r="3" fill="#1D9E75"/>`;});
+
+  svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
+  svg.innerHTML=html;
+}
+
+// ─── NAVEGAÇÃO ─────────────────────────────────────────────
+function go(tab){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('p-'+tab).classList.add('active');
+  event.currentTarget.classList.add('active');
+  if(tab==='graf')setTimeout(()=>{drawChart(patrimonioAtual());},50);
+  if(tab==='cal')renderCalendario();
+  if(tab==='recv'){renderReembolsos();}
+}
+
+// ─── INIT ──────────────────────────────────────────────────
+load(); // carrega localStorage primeiro (rápido)
+
+// Depois busca Supabase (pode ter dados mais recentes de outro device)
+loadFromSupabase().then(()=>{ render(); });
+
+// Datas padrão
+const hj=hoje();
+['ap-data','sl-data'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=hj;});
+
+render();
+window.addEventListener('resize',()=>{if(document.getElementById('p-graf').classList.contains('active'))drawChart(patrimonioAtual());});
+</script>
+</body>
+</html>
