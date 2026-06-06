@@ -155,6 +155,7 @@ svg.chart{width:100%;height:100%}
     <button class="tab-btn" onclick="go('graf')">Gráfico</button>
     <button class="tab-btn" onclick="go('marc')">Marcos</button>
     <button class="tab-btn" onclick="go('recv')">A Receber</button>
+    <button class="tab-btn" onclick="go('gastos')">Gastos</button>
     <button class="tab-btn" onclick="go('cal')">Calendário</button>
     <button class="tab-btn" onclick="go('reg2')">Regras</button>
     <button class="tab-btn" onclick="go('bkp')">Backup</button>
@@ -179,6 +180,7 @@ svg.chart{width:100%;height:100%}
       <div class="footer-info">Datas automáticas. Atualize o valor quando a fatura fechar.</div>
     </div>
     <div id="meta-mes-card" class="meta-mes card"></div>
+    <div id="gs-home"></div>
     <div id="re-home"></div>
     <div id="streak-box" class="streak-box"></div>
     <div id="recv-home"></div>
@@ -236,6 +238,7 @@ svg.chart{width:100%;height:100%}
       <button class="ext-f active" onclick="setFiltro('todos')" data-f="todos">Todos</button>
       <button class="ext-f" onclick="setFiltro('aporte')" data-f="aporte">💵 Aportes</button>
       <button class="ext-f" onclick="setFiltro('renda')" data-f="renda">💰 Renda extra</button>
+      <button class="ext-f" onclick="setFiltro('pagamento')" data-f="pagamento">✓ Pagamentos</button>
       <button class="ext-f" onclick="setFiltro('mes')" data-f="mes">📅 Este mês</button>
     </div>
     <div id="ext-resumo"></div>
@@ -304,6 +307,60 @@ svg.chart{width:100%;height:100%}
     <div id="dev-total"></div>
   </div>
 
+  <!-- GASTOS -->
+  <div id="p-gastos" class="panel">
+    <div class="card">
+      <div class="card-lbl">Registrar pagamento</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div class="field"><div class="field-lbl">Descrição</div><input type="text" id="gs-desc" placeholder="Ex: Mercado, Posto, Farmácia"></div>
+        <div class="grid2">
+          <div class="field"><div class="field-lbl">Valor (R$)</div><input type="number" id="gs-val" placeholder="Ex: 150,00" inputmode="decimal"></div>
+          <div class="field"><div class="field-lbl">Data</div><input type="date" id="gs-data"></div>
+        </div>
+        <div class="grid2">
+          <div class="field"><div class="field-lbl">Categoria</div>
+            <select id="gs-cat">
+              <option value="🍽️ Alimentação">🍽️ Alimentação</option>
+              <option value="🚗 Transporte">🚗 Transporte</option>
+              <option value="🏥 Saúde">🏥 Saúde</option>
+              <option value="🎉 Lazer">🎉 Lazer</option>
+              <option value="🏠 Casa">🏠 Casa</option>
+              <option value="💳 Cartão">💳 Cartão</option>
+              <option value="📦 Outros">📦 Outros</option>
+            </select>
+          </div>
+          <div class="field"><div class="field-lbl">Pagamento</div>
+            <select id="gs-forma">
+              <option value="PIX">PIX</option>
+              <option value="Cartão">Cartão</option>
+              <option value="Dinheiro">Dinheiro</option>
+              <option value="Débito">Débito</option>
+            </select>
+          </div>
+        </div>
+        <div id="gs-err" class="err-msg" style="display:none">Preencha descrição e valor.</div>
+        <button class="btn" style="background:var(--rd)" onclick="addGasto()">Registrar gasto</button>
+      </div>
+    </div>
+    <!-- Resumo por categoria -->
+    <div class="card">
+      <div class="card-lbl" id="gs-resumo-titulo">Resumo do mês</div>
+      <div id="gs-resumo"></div>
+    </div>
+    <!-- Filtro e lista -->
+    <div style="display:flex;gap:6px;flex-wrap:wrap" id="gs-filtros">
+      <button class="ext-f active" onclick="setGsFiltro('todos')" data-gf="todos">Todos</button>
+      <button class="ext-f" onclick="setGsFiltro('🍽️ Alimentação')" data-gf="🍽️ Alimentação">🍽️</button>
+      <button class="ext-f" onclick="setGsFiltro('🚗 Transporte')" data-gf="🚗 Transporte">🚗</button>
+      <button class="ext-f" onclick="setGsFiltro('🏥 Saúde')" data-gf="🏥 Saúde">🏥</button>
+      <button class="ext-f" onclick="setGsFiltro('🎉 Lazer')" data-gf="🎉 Lazer">🎉</button>
+      <button class="ext-f" onclick="setGsFiltro('🏠 Casa')" data-gf="🏠 Casa">🏠</button>
+      <button class="ext-f" onclick="setGsFiltro('💳 Cartão')" data-gf="💳 Cartão">💳</button>
+      <button class="ext-f" onclick="setGsFiltro('📦 Outros')" data-gf="📦 Outros">📦</button>
+    </div>
+    <div id="gs-list"></div>
+  </div>
+
   <!-- CALENDÁRIO -->
   <div id="p-cal" class="panel">
     <div class="card">
@@ -370,6 +427,7 @@ let S={
   aportes:[],saldos:{},semanais:[],devedores:[],
   reembolsos:[],
   rendaExtra:[],
+  gastos:[],
   contasFixas:[
     {id:'unimed',nome:'Unimed',dia:30,valor:544.56,emoji:'🏥',pagoMes:null},
     {id:'enel',nome:'Energia Enel',dia:15,valor:115,emoji:'⚡',pagoMes:null},
@@ -407,6 +465,7 @@ function mergeState(parsed){
   S.contasFixas=parsed.contasFixas||S.contasFixas;
   S.reembolsos=parsed.reembolsos||[];
   S.rendaExtra=parsed.rendaExtra||[];
+  S.gastos=parsed.gastos||[];
 }
 
 async function saveToSupabase(){
@@ -705,13 +764,21 @@ function renderCalendario(){
   // Aporte meta
   eventos.push({dia:5,icon:'📈',nome:'Aporte meta (R$1.871)',val:'',tipo:'meta',pago:false,acao:''});
 
-  eventos.sort((a,b)=>a.dia===b.dia?0:a.dia-b.dia);
+  // Calendário: mostrar só não pagos E dias >= hoje (a partir de ontem p/ urgentes)
+  // Manter vencidos não pagos (urgente) + futuros não pagos
+  const eventosCalendario = eventos.filter(e=>{
+    if(e.pago) return false;           // pago → vai pro extrato
+    if(e.tipo==='renda'||e.tipo==='meta') return e.dia>=dh; // renda/meta só futura
+    if(e.tipo==='fatura'||e.tipo==='conta') return true;    // contas: sempre mostrar se não pago
+    return e.dia>=dh;
+  });
+  eventosCalendario.sort((a,b)=>a.dia===b.dia?0:a.dia-b.dia);
 
   const totalContas=S.contasFixas.reduce((s,c)=>s+c.valor,0);
   const totalFaturas=S.faturas.reduce((s,f)=>s+f.valor,0);
   const totalSaidas=totalContas+totalFaturas;
 
-  document.getElementById('cal-lista').innerHTML=eventos.map(e=>{
+  document.getElementById('cal-lista').innerHTML=eventosCalendario.length===0?'<div style="padding:24px;text-align:center;color:var(--sub);font-size:13px">✓ Nenhuma conta pendente neste mês.</div>':eventosCalendario.map(e=>{
     const passado=e.dia<dh;const ehHoje=e.dia===dh;
     const diaClass=ehHoje?'cal-dia hoje':passado?'cal-dia passado':'cal-dia';
     const corVal=e.tipo==='renda'||e.tipo==='receber'?'var(--gr)':e.tipo==='meta'?'var(--bl)':'var(--rd)';
@@ -779,6 +846,37 @@ function renderExtrato(){
       movimentos.push({id:a.id,tipo:'aporte',icon:COFRES.find(c=>c.id===a.cofre)?.emoji||'💰',
         nome:COFRES.find(c=>c.id===a.cofre)?.nome||a.cofre,
         nota:a.nota,data:a.data,valor:a.valor,mes,cor:'var(--gr)'});
+    });
+  }
+
+  // Pagamentos realizados (faturas + contas fixas marcadas como pagas)
+  if(extFiltro==='todos'||extFiltro==='pagamento'||extFiltro==='mes'){
+    const mesAtualPgto=`${new Date().getMonth()}_${new Date().getFullYear()}`;
+    S.faturas.forEach(f=>{
+      if(f.pagoMes===mesAtualPgto&&f.pagoData){
+        const d=new Date(f.pagoData+'T00:00:00');
+        const mes=MESES[d.getMonth()]+'/'+String(d.getFullYear()).slice(2);
+        if(extFiltro==='mes'&&mes!==mesAtualStr)return;
+        movimentos.push({id:'fat_'+f.id,tipo:'pagamento',icon:'💳',nome:f.nome,
+          nota:'fatura paga',data:f.pagoData,valor:f.valor,mes,cor:'var(--rd)'});
+      }
+    });
+    S.contasFixas.forEach(c=>{
+      if(c.pagoMes===mesAtualPgto&&c.pagoData){
+        const d=new Date(c.pagoData+'T00:00:00');
+        const mes=MESES[d.getMonth()]+'/'+String(d.getFullYear()).slice(2);
+        if(extFiltro==='mes'&&mes!==mesAtualStr)return;
+        movimentos.push({id:'cnt_'+c.id,tipo:'pagamento',icon:c.emoji,nome:c.nome,
+          nota:'conta paga',data:c.pagoData,valor:c.valor,mes,cor:'var(--rd)'});
+      }
+    });
+    // Gastos registrados
+    S.gastos.forEach(g=>{
+      const d=new Date(g.data+'T00:00:00');
+      const mes=MESES[d.getMonth()]+'/'+String(d.getFullYear()).slice(2);
+      if(extFiltro==='mes'&&mes!==mesAtualStr)return;
+      movimentos.push({id:'gs_'+g.id,tipo:'pagamento',icon:'💸',nome:g.desc,
+        nota:g.cat+' · '+g.forma,data:g.data,valor:g.valor,mes,cor:'var(--rd)'});
     });
   }
 
@@ -850,18 +948,100 @@ function renderExtrato(){
             <div style="display:flex;align-items:center;gap:10px">
               <span style="font-size:16px">${m.icon}</span>
               <div>
-                <div style="font-size:12px;background:${m.tipo==='aporte'?'var(--gr-bg)':'var(--bl-bg)'};color:${m.tipo==='aporte'?'var(--gr)':'var(--bl)'};border-radius:10px;padding:1px 7px;display:inline-block;font-weight:500;margin-bottom:2px">${m.tipo==='aporte'?'Aporte':'Renda extra'}</div>
+                <div style="font-size:12px;background:${m.tipo==='aporte'?'var(--gr-bg)':m.tipo==='pagamento'?'var(--rd-bg)':'var(--bl-bg)'};color:${m.tipo==='aporte'?'var(--gr)':m.tipo==='pagamento'?'var(--rd)':'var(--bl)'};border-radius:10px;padding:1px 7px;display:inline-block;font-weight:500;margin-bottom:2px">${m.tipo==='aporte'?'Aporte':m.tipo==='pagamento'?'Pagamento':'Renda extra'}</div>
                 <div style="font-size:13px;font-weight:500;color:var(--ink)">${m.nome}</div>
                 <div style="font-size:11px;color:var(--sub)">${fmtD(m.data)}${m.nota?' · '+m.nota:''}</div>
               </div>
             </div>
             <div style="display:flex;align-items:center;gap:8px">
               <span style="font-size:14px;font-weight:600;color:${m.cor}">+${brl(m.valor)}</span>
-              <button onclick="${m.tipo==='aporte'?'delAporte':'delRendaExtra'}(${m.id})" style="background:none;border:none;cursor:pointer;color:var(--sub);font-size:18px;padding:0 2px;line-height:1">×</button>
+              ${m.tipo!=='pagamento'?`<button onclick="${m.tipo==='aporte'?'delAporte':'delRendaExtra'}(${m.id})" style="background:none;border:none;cursor:pointer;color:var(--sub);font-size:18px;padding:0 2px;line-height:1">×</button>`:''}
             </div>
           </div>`).join('')}
       </div>
     </div>`).join('');
+}
+
+// ─── GASTOS ──────────────────────────────────────────────────
+let gsFiltro='todos';
+
+function setGsFiltro(f){
+  gsFiltro=f;
+  document.querySelectorAll('[data-gf]').forEach(b=>b.classList.toggle('active',b.dataset.gf===f));
+  renderGastos();
+}
+
+function addGasto(){
+  const val=parseBRL(document.getElementById('gs-val').value);
+  const desc=document.getElementById('gs-desc').value.trim();
+  const data=document.getElementById('gs-data').value;
+  const cat=document.getElementById('gs-cat').value;
+  const forma=document.getElementById('gs-forma').value;
+  if(isNaN(val)||val<=0||!desc){document.getElementById('gs-err').style.display='block';return;}
+  document.getElementById('gs-err').style.display='none';
+  S.gastos.push({id:Date.now(),desc,valor:val,data,cat,forma,ts:Date.now()});
+  document.getElementById('gs-val').value='';
+  document.getElementById('gs-desc').value='';
+  save();renderGastos();
+}
+
+function delGasto(id){
+  S.gastos=S.gastos.filter(g=>g.id!==id);
+  save();renderGastos();
+}
+
+function gastosMesAtual(){
+  const n=new Date();
+  return S.gastos.filter(g=>{
+    const d=new Date(g.data+'T00:00:00');
+    return d.getMonth()===n.getMonth()&&d.getFullYear()===n.getFullYear();
+  });
+}
+
+function renderGastos(){
+  const n=new Date();
+  const mesStr=MESES[n.getMonth()]+'/'+String(n.getFullYear()).slice(2);
+  document.getElementById('gs-resumo-titulo').textContent='Resumo — '+mesStr;
+
+  // Resumo por categoria do mês atual
+  const gMes=gastosMesAtual();
+  const totalMes=gMes.reduce((s,g)=>s+g.valor,0);
+  const porCat={};
+  gMes.forEach(g=>{porCat[g.cat]=(porCat[g.cat]||0)+g.valor;});
+  const maxCat=Math.max(...Object.values(porCat),1);
+
+  document.getElementById('gs-resumo').innerHTML=Object.keys(porCat).length?
+    Object.entries(porCat).sort((a,b)=>b[1]-a[1]).map(([cat,val])=>{
+      const pct=(val/maxCat)*100;
+      const pctTotal=totalMes>0?(val/totalMes*100).toFixed(1):0;
+      return`<div style="margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px">
+          <span style="font-weight:500">${cat}</span>
+          <span style="color:var(--rd);font-weight:500">${brl(val)} <span style="color:var(--sub);font-size:11px">${pctTotal}%</span></span>
+        </div>
+        <div style="background:var(--neu);border-radius:4px;height:8px;overflow:hidden">
+          <div style="height:100%;width:${pct}%;background:var(--rd);border-radius:4px;transition:width .4s"></div>
+        </div>
+      </div>`;
+    }).join('')+`<div style="display:flex;justify-content:space-between;font-size:13px;font-weight:700;padding-top:8px;border-top:.5px solid var(--bdr)"><span>Total do mês</span><span style="color:var(--rd)">${brl(totalMes)}</span></div>`
+    :'<div style="font-size:13px;color:var(--sub)">Nenhum gasto registrado este mês.</div>';
+
+  // Lista filtrada
+  let lista=gsFiltro==='todos'?[...S.gastos]:S.gastos.filter(g=>g.cat===gsFiltro);
+  lista.sort((a,b)=>b.data>a.data?1:-1);
+
+  document.getElementById('gs-list').innerHTML=lista.length?lista.map(g=>`
+    <div style="background:var(--card);border:.5px solid var(--bdr);border-left:3px solid var(--rd);border-radius:0 8px 8px 0;padding:12px 14px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center">
+      <div>
+        <div style="font-size:13px;font-weight:500;color:var(--ink)">${g.desc}</div>
+        <div style="font-size:11px;color:var(--sub);margin-top:2px">${fmtD(g.data)} · ${g.cat} · ${g.forma}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-size:15px;font-weight:600;color:var(--rd)">-${brl(g.valor)}</span>
+        <button onclick="delGasto(${g.id})" style="background:none;border:none;cursor:pointer;color:var(--sub);font-size:18px;padding:0 2px;line-height:1">×</button>
+      </div>
+    </div>`).join('')
+    :'<div style="text-align:center;padding:32px;color:var(--sub);font-size:14px">Nenhum gasto encontrado.</div>';
 }
 // ─── REEMBOLSOS ──────────────────────────────────────────────
 function editDevedor(id){
@@ -1123,6 +1303,7 @@ function go(tab){
   if(tab==='graf')setTimeout(()=>{drawChart(patrimonioAtual());},50);
   if(tab==='cal')renderCalendario();
   if(tab==='ext')renderExtrato();
+  if(tab==='gastos')renderGastos();
   if(tab==='recv'){renderReembolsos();}
 }
 
@@ -1134,7 +1315,7 @@ loadFromSupabase().then(()=>{ render(); });
 
 // Datas padrão
 const hj=hoje();
-['ap-data','sl-data','re-data'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=hj;});
+['ap-data','sl-data','re-data','gs-data'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=hj;});
 
 render();
 window.addEventListener('resize',()=>{if(document.getElementById('p-graf').classList.contains('active'))drawChart(patrimonioAtual());});
