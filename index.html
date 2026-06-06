@@ -427,6 +427,17 @@ function load(){
 
 // ─── HELPERS ───────────────────────────────────────────────
 function brl(v){return'R$\u00a0'+Number(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function parseBRL(str){
+  if(!str)return NaN;
+  // Aceita: 1000 | 1.000 | 1000,00 | 1.000,00 | 1000.00
+  const s=String(str).trim();
+  // Se tem vírgula: formato BR (ponto=milhar, vírgula=decimal)
+  if(s.includes(',')){return parseFloat(s.replace(/\./g,'').replace(',','.'));}
+  // Se tem ponto: pode ser milhar BR (1.000) ou decimal EN (1.5)
+  const dots=s.split('.').length-1;
+  if(dots===1&&s.split('.')[1].length===3){return parseFloat(s.replace('.',''));}
+  return parseFloat(s);
+}
 function hoje(){return new Date().toISOString().split('T')[0];}
 function fmtD(d){return d?d.split('-').reverse().join('/'):'—';}
 function mesLabel(i){const d=new Date(DATA_INICIO.getFullYear(),DATA_INICIO.getMonth()+i,1);return MESES[d.getMonth()]+'/'+String(d.getFullYear()).slice(2);}
@@ -467,7 +478,7 @@ function gerarAlerta(pat,proj){
 
 // ─── AÇÕES ─────────────────────────────────────────────────
 function addAporte(){
-  const val=parseFloat(document.getElementById('ap-val').value);
+  const val=parseBRL(document.getElementById('ap-val').value);
   const err=document.getElementById('ap-err');
   if(isNaN(val)||val<=0){err.textContent='Valor inválido.';err.style.display='block';return;}
   err.style.display='none';
@@ -476,7 +487,7 @@ function addAporte(){
   save();render();
 }
 function addSaldo(){
-  const val=parseFloat(document.getElementById('sl-val').value);
+  const val=parseBRL(document.getElementById('sl-val').value);
   const err=document.getElementById('sl-err');
   if(isNaN(val)||val<0){err.textContent='Valor inválido.';err.style.display='block';return;}
   err.style.display='none';
@@ -486,7 +497,7 @@ function addSaldo(){
   save();render();
 }
 function addSemanal(){
-  const val=parseFloat(document.getElementById('sw-val').value);
+  const val=parseBRL(document.getElementById('sw-val').value);
   if(isNaN(val)||val<0)return;
   S.semanais.push({id:Date.now(),total:val,data:hoje()});
   document.getElementById('sw-val').value='';
@@ -494,8 +505,8 @@ function addSemanal(){
 }
 function addDevedor(){
   const nome=document.getElementById('dv-nome').value.trim();
-  const total=parseFloat(document.getElementById('dv-total').value);
-  const parc=parseFloat(document.getElementById('dv-parc').value);
+  const total=parseBRL(document.getElementById('dv-total').value);
+  const parc=parseBRL(document.getElementById('dv-parc').value);
   const dia=parseInt(document.getElementById('dv-dia').value);
   const err=document.getElementById('dv-err');
   if(!nome||isNaN(total)||isNaN(parc)||isNaN(dia)||dia<1||dia>31){err.textContent='Preencha todos os campos.';err.style.display='block';return;}
@@ -528,7 +539,7 @@ function editConta(id){
   if(!campo)return;
   if(campo==='1'){
     const v=prompt('Novo valor de '+c.nome+' (R$):',c.valor);
-    if(v===null)return;const n=parseFloat(v.replace(',','.'));
+    if(v===null)return;const n=parseBRL(v);
     if(isNaN(n)||n<0)return;
     S.contasFixas=S.contasFixas.map(x=>x.id===id?{...x,valor:n}:x);
   } else if(campo==='2'){
@@ -551,7 +562,7 @@ function delConta(id){
 function addContaFixa(){
   const nome=document.getElementById('cf-nome').value.trim();
   const dia=parseInt(document.getElementById('cf-dia').value);
-  const val=parseFloat(document.getElementById('cf-val').value.replace(',','.'));
+  const val=parseBRL(document.getElementById('cf-val').value);
   const emoji=document.getElementById('cf-emoji').value||'📄';
   if(!nome||isNaN(dia)||dia<1||dia>31||isNaN(val)){alert('Preencha todos os campos.');return;}
   S.contasFixas.push({id:'cf_'+Date.now(),nome,dia,valor:val,emoji,pagoMes:null});
@@ -565,7 +576,7 @@ function marcarPago(id){
 function editFatura(id){
   const f=S.faturas.find(x=>x.id===id);if(!f)return;
   const v=prompt(`Novo valor da fatura ${f.nome}:`,f.valor);
-  if(v===null)return;const n=parseFloat(v.replace(',','.'));
+  if(v===null)return;const n=parseBRL(v);
   if(isNaN(n)||n<0)return;
   f.valor=n;f.atualizado=hoje();save();render();
 }
@@ -681,12 +692,12 @@ function editDevedor(id){
     S.devedores=S.devedores.map(x=>x.id===id?{...x,dia:n}:x);
   } else if(campo==='2'){
     const v=prompt('Novo valor da parcela (R$):',d.parc);
-    if(v===null)return;const n=parseFloat(v.replace(',','.'));
+    if(v===null)return;const n=parseBRL(v);
     if(isNaN(n)||n<0)return;
     S.devedores=S.devedores.map(x=>x.id===id?{...x,parc:n}:x);
   } else if(campo==='3'){
     const v=prompt('Novo total devido (R$):',d.total);
-    if(v===null)return;const n=parseFloat(v.replace(',','.'));
+    if(v===null)return;const n=parseBRL(v);
     if(isNaN(n)||n<0)return;
     S.devedores=S.devedores.map(x=>x.id===id?{...x,total:n}:x);
   }
@@ -694,7 +705,7 @@ function editDevedor(id){
 }
 function addReembolso(){
   const desc=document.getElementById('rb-desc').value.trim();
-  const val=parseFloat(document.getElementById('rb-val').value.replace(',','.'));
+  const val=parseBRL(document.getElementById('rb-val').value);
   const quem=document.getElementById('rb-quem').value;
   const parc=document.getElementById('rb-parc').value.trim();
   if(!desc||isNaN(val)||val<=0){alert('Preencha descrição e valor.');return;}
