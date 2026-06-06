@@ -140,7 +140,7 @@ svg.chart{width:100%;height:100%}
 <div id="header">
   <div id="sync-bar" style="background:var(--bl-bg);border-bottom:.5px solid var(--bl-bdr);padding:4px 16px;font-size:11px;color:var(--bl);display:flex;align-items:center;gap:6px">⟳ Conectando...</div>
 <div class="h-top">
-    <div><div class="h-title">Meta Patrimônio</div><div class="h-sub">Bruno · Enzo · Ana Luiza · Maria Isabele</div></div>
+    <div><div class="h-title">Meta Patrimônio</div><div class="h-sub">Bruno · Bell · Enzo · Ana Luiza · Maria Isabele</div></div>
     <div><div class="h-pat" id="h-pat">R$ 0,00</div><div class="h-pct" id="h-pct">0% · prazo Ago/29</div></div>
   </div>
   <div class="prog-wrap"><div class="prog-bar" id="prog-bar" style="width:0%"></div></div>
@@ -175,6 +175,7 @@ svg.chart{width:100%;height:100%}
       <div class="footer-info">Datas automáticas. Atualize o valor quando a fatura fechar.</div>
     </div>
     <div id="meta-mes-card" class="meta-mes card"></div>
+    <div id="re-home"></div>
     <div id="streak-box" class="streak-box"></div>
     <div id="recv-home"></div>
     <div class="grid2" id="stats-grid"></div>
@@ -194,6 +195,21 @@ svg.chart{width:100%;height:100%}
         <button class="btn btn-gr" onclick="addAporte()">Registrar aporte</button>
       </div>
     </div>
+    <div class="card">
+      <div class="card-lbl">Renda extra</div>
+      <div style="font-size:12px;color:var(--sub);margin-bottom:10px">Qualquer valor recebido fora do pró-labore: venda, comissão, aluguel, devolução, etc.</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div class="field"><div class="field-lbl">Descrição</div><input type="text" id="re-desc" placeholder="Ex: Comissão venda chapéu"></div>
+        <div class="grid2">
+          <div class="field"><div class="field-lbl">Valor (R$)</div><input type="number" id="re-val" placeholder="Ex: 500,00" inputmode="decimal"></div>
+          <div class="field"><div class="field-lbl">Data</div><input type="date" id="re-data"></div>
+        </div>
+        <div id="re-err" class="err-msg" style="display:none">Preencha descrição e valor.</div>
+        <button class="btn btn-gr" onclick="addRendaExtra()">Registrar renda extra</button>
+      </div>
+      <div id="re-hist" style="margin-top:12px"></div>
+    </div>
+
     <div class="card">
       <div class="card-lbl">Atualizar saldo do cofre</div>
       <div style="font-size:12px;color:var(--sub);margin-bottom:10px">Anote o saldo atual para checar rendimento.</div>
@@ -339,6 +355,7 @@ const REGRAS_DEF=[{n:'01',t:'Aporte automático no dia 05',d:'Pró-labore entrou
 let S={
   aportes:[],saldos:{},semanais:[],devedores:[],
   reembolsos:[],
+  rendaExtra:[],
   contasFixas:[
     {id:'unimed',nome:'Unimed',dia:30,valor:544.56,emoji:'🏥',pagoMes:null},
     {id:'enel',nome:'Energia Enel',dia:15,valor:115,emoji:'⚡',pagoMes:null},
@@ -375,6 +392,7 @@ function mergeState(parsed){
   S.faturas=parsed.faturas||S.faturas;
   S.contasFixas=parsed.contasFixas||S.contasFixas;
   S.reembolsos=parsed.reembolsos||[];
+  S.rendaExtra=parsed.rendaExtra||[];
 }
 
 async function saveToSupabase(){
@@ -470,7 +488,7 @@ function gerarAlerta(pat,proj){
   }
   if(dow===1&&!S.semanais.some(s=>s.data===hoje()))return{tipo:'info',e:'📊',m:'Segunda-feira. Hora de anotar os saldos das suas contas.'};
   const d=pat-(proj||PAT_INICIAL);
-  if(d>2000)return{tipo:'success',e:'🚀',m:`R$${Math.round(d).toLocaleString('pt-BR')} à frente da projeção. Enzo, Ana Luiza e Maria Isabele herdam esse exemplo.`};
+  if(d>2000)return{tipo:'success',e:'🚀',m:`R$${Math.round(d).toLocaleString('pt-BR')} à frente da projeção. Bell, Enzo, Ana Luiza e Maria Isabele herdam esse exemplo.`};
   if(d>0)return{tipo:'success',e:'✅',m:`No caminho certo. Cada R$1,00 guardado conta.`};
   if(d>-2000)return{tipo:'warn',e:'👀',m:`Levemente abaixo da projeção. Revisa os gastos antes de qualquer compra nova.`};
   return{tipo:'danger',e:'🔴',m:`Abaixo da projeção em R$${Math.round(Math.abs(d)).toLocaleString('pt-BR')}. Congela compras não essenciais.`};
@@ -655,6 +673,21 @@ function renderCalendario(){
   S.devedores.forEach(d=>{
     if(d.total-d.pago>0)eventos.push({dia:d.dia,icon:'👤',nome:d.nome,val:'+'+brl(d.parc),tipo:'receber',pago:false,acao:''});
   });
+  // Renda extra do mês
+  const n2=new Date();
+  S.rendaExtra.filter(r=>{
+    const d=new Date(r.data+'T00:00:00');
+    return d.getMonth()===n2.getMonth()&&d.getFullYear()===n2.getFullYear();
+  }).forEach(r=>{
+    const d=new Date(r.data+'T00:00:00');
+    eventos.push({dia:d.getDate(),icon:'💰',nome:r.desc,val:'+'+brl(r.valor),tipo:'renda',pago:false,acao:''});
+  });
+
+  // Aniversário de casamento — dia 21 de novembro
+  if(n.getMonth()===10){ // novembro = mês 10 (0-indexed)
+    eventos.push({dia:21,icon:'💍',nome:'Aniversário de casamento — Bruno & Bell',val:'',tipo:'renda',pago:false,acao:''});
+  }
+
   // Aporte meta
   eventos.push({dia:5,icon:'📈',nome:'Aporte meta (R$1.871)',val:'',tipo:'meta',pago:false,acao:''});
 
@@ -680,6 +713,32 @@ function renderCalendario(){
   // Form add conta agora é HTML estático — não precisa gerar aqui
 }
 
+
+// ─── RENDA EXTRA ─────────────────────────────────────────────
+function addRendaExtra(){
+  const val=parseBRL(document.getElementById('re-val').value);
+  const desc=document.getElementById('re-desc').value.trim();
+  const data=document.getElementById('re-data').value;
+  if(isNaN(val)||val<=0||!desc){
+    document.getElementById('re-err').style.display='block';return;
+  }
+  document.getElementById('re-err').style.display='none';
+  S.rendaExtra.push({id:Date.now(),valor:val,desc,data,ts:Date.now()});
+  document.getElementById('re-val').value='';
+  document.getElementById('re-desc').value='';
+  save();render();
+}
+function delRendaExtra(id){
+  S.rendaExtra=S.rendaExtra.filter(r=>r.id!==id);
+  save();render();
+}
+function rendaExtraMesAtual(){
+  const n=new Date();
+  return S.rendaExtra.filter(r=>{
+    const d=new Date(r.data+'T00:00:00');
+    return d.getMonth()===n.getMonth()&&d.getFullYear()===n.getFullYear();
+  }).reduce((s,r)=>s+r.valor,0);
+}
 // ─── REEMBOLSOS ──────────────────────────────────────────────
 function editDevedor(id){
   const d=S.devedores.find(x=>x.id===id);if(!d)return;
@@ -950,7 +1009,7 @@ loadFromSupabase().then(()=>{ render(); });
 
 // Datas padrão
 const hj=hoje();
-['ap-data','sl-data'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=hj;});
+['ap-data','sl-data','re-data'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=hj;});
 
 render();
 window.addEventListener('resize',()=>{if(document.getElementById('p-graf').classList.contains('active'))drawChart(patrimonioAtual());});
