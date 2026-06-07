@@ -180,6 +180,7 @@ svg.chart{width:100%;height:100%}
       <div class="footer-info">Datas automáticas. Atualize o valor quando a fatura fechar.</div>
     </div>
     <div id="meta-mes-card" class="meta-mes card"></div>
+    <div id="benef-home"></div>
     <div id="gs-home"></div>
     <div id="re-home"></div>
     <div id="streak-box" class="streak-box"></div>
@@ -214,6 +215,17 @@ svg.chart{width:100%;height:100%}
         <button class="btn btn-gr" onclick="addRendaExtra()">Registrar renda extra</button>
       </div>
       <div id="re-hist" style="margin-top:12px"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-lbl">Benefícios pagos pela empresa</div>
+      <div style="font-size:12px;color:var(--sub);margin-bottom:10px">Gastos cobertos pela empresa fora do pró-labore. Não somam ao patrimônio mas compõem sua remuneração real.</div>
+      <div id="benef-lista"></div>
+      <div style="margin-top:10px;display:flex;gap:8px">
+        <input type="text" id="benef-nome" placeholder="Ex: Curso, Seguro" style="flex:1;padding:8px 10px;font-size:13px;border:.5px solid var(--bdr);border-radius:8px;background:var(--bg);color:var(--ink);outline:none">
+        <input type="number" id="benef-val" placeholder="Valor" inputmode="decimal" style="width:100px;padding:8px 10px;font-size:13px;border:.5px solid var(--bdr);border-radius:8px;background:var(--bg);color:var(--ink);outline:none">
+        <button onclick="addBeneficio()" style="padding:8px 12px;background:var(--bl);color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px">+</button>
+      </div>
     </div>
 
     <div class="card">
@@ -439,6 +451,10 @@ let S={
   reembolsos:[],
   rendaExtra:[],
   gastos:[],
+  beneficios:[
+    {id:'pensao',nome:'Pensão alimentícia',valor:6072,emoji:'👶',desc:'Paga pela empresa — não entra no pró-labore'},
+    {id:'mentoria',nome:'Mentoria',valor:1800,emoji:'🎓',desc:'Paga pela empresa — não entra no pró-labore'}
+  ],
   contasFixas:[
     {id:'unimed',nome:'Unimed',dia:30,valor:544.56,emoji:'🏥',pagoMes:null},
     {id:'enel',nome:'Energia Enel',dia:15,valor:115,emoji:'⚡',pagoMes:null},
@@ -477,6 +493,7 @@ function mergeState(parsed){
   S.reembolsos=parsed.reembolsos||[];
   S.rendaExtra=parsed.rendaExtra||[];
   S.gastos=parsed.gastos||[];
+  S.beneficios=parsed.beneficios||S.beneficios;
 }
 
 async function saveToSupabase(){
@@ -632,8 +649,10 @@ function mesFaturaAtual(dia){
 }
 function marcarContaPaga(id){
   const mes=mesFaturaAtual();
+  const conta=S.contasFixas.find(c=>c.id===id);
   S.contasFixas=S.contasFixas.map(c=>c.id===id?{...c,pagoMes:mes,pagoData:hoje()}:c);
-  save();renderCalendario();
+  if(conta){autoGasto(conta.nome,conta.valor,conta.emoji,'PIX',null);}
+  save();render();renderCalendario();
 }
 function editConta(id){
   const c=S.contasFixas.find(x=>x.id===id);if(!c)return;
@@ -996,6 +1015,15 @@ function setGsFiltro(f){
 }
 
 
+
+const CAT_MAP_EMOJI={
+  '🏥':'🏥 Saúde','⚡':'🏠 Casa','📶':'🏠 Casa',
+  '📱':'🚗 Transporte','💧':'🏠 Casa','💳':'💳 Cartão'
+};
+function autoGasto(nome,valor,emoji,forma,cartaoId){
+  const cat=CAT_MAP_EMOJI[emoji]||'📦 Outros';
+  S.gastos.push({id:Date.now(),desc:nome,valor,data:hoje(),cat,forma:forma||'PIX',cartao:cartaoId||null,ts:Date.now(),auto:true});
+}
 function toggleCartaoSelect(){
   const forma=document.getElementById('gs-forma').value;
   const wrap=document.getElementById('gs-cartao-wrap');
@@ -1117,6 +1145,31 @@ function delReembolso(id){
   if(!confirm('Remover?'))return;
   S.reembolsos=S.reembolsos.filter(r=>r.id!==id);
   save();renderReembolsos();
+}
+
+function renderBeneficios(){
+  const el=document.getElementById('benef-lista');
+  if(!el)return;
+  el.innerHTML=S.beneficios.map(b=>`
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:.5px solid var(--bdr)">
+      <div><div style="font-size:13px;font-weight:500">${b.emoji||'💼'} ${b.nome}</div><div style="font-size:11px;color:var(--sub)">${b.desc||'Empresa paga'}</div></div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-size:14px;font-weight:500;color:var(--bl)">${brl(b.valor)}</span>
+        <button onclick="delBeneficio('${b.id}')" style="background:none;border:none;cursor:pointer;color:var(--sub);font-size:16px;padding:0 2px">×</button>
+      </div>
+    </div>`).join('')||'<div style="font-size:13px;color:var(--sub)">Nenhum benefício cadastrado.</div>';
+}
+function addBeneficio(){
+  const nome=document.getElementById('benef-nome').value.trim();
+  const val=parseBRL(document.getElementById('benef-val').value);
+  if(!nome||isNaN(val)||val<=0)return;
+  S.beneficios.push({id:'bf_'+Date.now(),nome,valor:val,emoji:'💼',desc:'Empresa paga'});
+  document.getElementById('benef-nome').value='';document.getElementById('benef-val').value='';
+  save();render();renderBeneficios();
+}
+function delBeneficio(id){
+  S.beneficios=S.beneficios.filter(b=>b.id!==id);
+  save();render();renderBeneficios();
 }
 function renderReembolsos(){
   const pendentes=S.reembolsos.filter(r=>r.status==='pendente');
@@ -1353,6 +1406,7 @@ function go(tab){
   if(tab==='ext')renderExtrato();
   if(tab==='gastos')renderGastos();
   if(tab==='recv'){renderReembolsos();}
+  if(tab==='reg'){renderBeneficios();}
 }
 
 // ─── INIT ──────────────────────────────────────────────────
