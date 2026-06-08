@@ -165,8 +165,7 @@ svg.chart{width:100%;height:100%}
   <!-- HOME -->
   <div id="p-home" class="panel active">
 
-    <!-- HERÓI: patrimônio + progresso -->
-    <div id="alerta" style="display:none"></div>
+    <div id="alerta" style="display:none;margin-bottom:0"></div>
     <div id="home-hero" style="background:linear-gradient(135deg,var(--gr),#0d6647);border-radius:16px;padding:24px 20px;color:#fff;text-align:center">
       <div style="font-size:11px;letter-spacing:3px;opacity:.8;margin-bottom:8px;text-transform:uppercase">Patrimônio atual</div>
       <div id="home-pat-num" style="font-size:38px;font-weight:700;letter-spacing:-1px;margin-bottom:4px">R$ 0,00</div>
@@ -213,10 +212,10 @@ svg.chart{width:100%;height:100%}
     </div>
 
     <!-- STREAK -->
-    <div id="streak-box" class="streak-box"></div>
+    <div id="streak-box" class="streak-box" style="display:none"></div>
 
     <!-- META MENSAL -->
-    <div id="meta-mes-card" class="meta-mes card"></div>
+    <div id="meta-mes-card" class="meta-mes card" style="display:none"></div>
 
     <!-- FATURAS DOS CARTÕES -->
     <div class="card" id="fat-card">
@@ -633,6 +632,24 @@ function renderHomeMotivacional(){
       </div>`;
   }
 }
+
+function extDelete(tipo, id){
+  const msg=tipo==='pag'?'Desfazer este pagamento?':'Excluir este registro?';
+  if(!confirm(msg))return;
+  if(tipo==='aporte'){S.aportes=S.aportes.filter(a=>a.id!==id);}
+  else if(tipo==='renda'){S.rendaExtra=S.rendaExtra.filter(r=>r.id!==id);}
+  else if(tipo==='gasto'){S.gastos=S.gastos.filter(g=>g.id!==id);}
+  else if(tipo==='fat'){
+    S.faturas=S.faturas.map(f=>String(f.id)===String(id)?{...f,pagoMes:null,pagoData:null}:f);
+    S.gastos=S.gastos.filter(g=>!(g.auto&&String(g.cartao)===String(id)));
+  }
+  else if(tipo==='cnt'){
+    S.contasFixas=S.contasFixas.map(c=>String(c.id)===String(id)?{...c,pagoMes:null,pagoData:null}:c);
+  }
+  save();
+  renderExtrato();
+  renderCalendario();
+}
 // ─── CALENDÁRIO ──────────────────────────────────────────────
 
 function receberProLabore(dia){
@@ -736,13 +753,13 @@ function renderExtrato(){
       if(extFiltro==='mes'&&mes!==mesAtualStr)return;
       const cofre=COFRES.find(c=>c.id===a.cofre);
       movimentos.push({id:a.id,tipo:'entrada',sinal:'+',icon:cofre?.emoji||'💰',nome:cofre?.nome||a.cofre,
-        nota:a.nota||'',data:a.data,valor:a.valor,mes,cor:'var(--gr)',delFn:`delAporte(${a.id})`});
+        nota:a.nota||'',data:a.data,valor:a.valor,mes,cor:'var(--gr)',extDelType:'aporte',extDelId:a.id});
     });
     S.rendaExtra.forEach(r=>{
       const d=new Date(r.data+'T00:00:00'),mes=MESES[d.getMonth()]+'/'+String(d.getFullYear()).slice(2);
       if(extFiltro==='mes'&&mes!==mesAtualStr)return;
       movimentos.push({id:r.id,tipo:'entrada',sinal:'+',icon:'💰',nome:r.desc,
-        nota:'Renda extra',data:r.data,valor:r.valor,mes,cor:'var(--gr)',delFn:`delRendaExtra(${r.id})`});
+        nota:'Renda extra',data:r.data,valor:r.valor,mes,cor:'var(--gr)',extDelType:'renda',extDelId:r.id});
     });
   }
   if(extFiltro==='todos'||extFiltro==='pagamento'||extFiltro==='mes'){
@@ -751,21 +768,21 @@ function renderExtrato(){
       const d=new Date(f.pagoData+'T00:00:00'),mes=MESES[d.getMonth()]+'/'+String(d.getFullYear()).slice(2);
       if(extFiltro==='mes'&&mes!==mesAtualStr)return;
       movimentos.push({id:'fat_'+f.id,tipo:'pagamento',sinal:'-',icon:'💳',nome:f.nome,
-        nota:'Fatura paga',data:f.pagoData,valor:f.valor,mes,cor:'var(--rd)',desfazFn:`desfazerPago('${f.id}')`});
+        nota:'Fatura paga',data:f.pagoData,valor:f.valor,mes,cor:'var(--rd)',extDelType:'fat',extDelId:f.id});
     });
     S.contasFixas.forEach(c=>{
       if(!c.pagoData)return;
       const d=new Date(c.pagoData+'T00:00:00'),mes=MESES[d.getMonth()]+'/'+String(d.getFullYear()).slice(2);
       if(extFiltro==='mes'&&mes!==mesAtualStr)return;
       movimentos.push({id:'cnt_'+c.id,tipo:'pagamento',sinal:'-',icon:c.emoji||'📄',nome:c.nome,
-        nota:'Conta paga',data:c.pagoData,valor:c.valor,mes,cor:'var(--rd)',desfazFn:`desfazerConta('${c.id}')`});
+        nota:'Conta paga',data:c.pagoData,valor:c.valor,mes,cor:'var(--rd)',extDelType:'cnt',extDelId:c.id});
     });
     S.gastos.filter(g=>!g.auto).forEach(g=>{
       const d=new Date(g.data+'T00:00:00'),mes=MESES[d.getMonth()]+'/'+String(d.getFullYear()).slice(2);
       if(extFiltro==='mes'&&mes!==mesAtualStr)return;
       movimentos.push({id:'gs_'+g.id,tipo:'pagamento',sinal:'-',icon:'💸',nome:g.desc,
         nota:g.cat+(g.forma?' · '+g.forma:'')+(g.parcelas?' '+g.parcelas+'x':''),
-        data:g.data,valor:g.valor,mes,cor:'var(--rd)',delFn:`delGasto(${g.id})`});
+        data:g.data,valor:g.valor,mes,cor:'var(--rd)',extDelType:'gasto',extDelId:g.id});
     });
   }
   if(!movimentos.length){
@@ -1124,6 +1141,24 @@ function aporteMesAtual(){
   }).reduce((s,a)=>s+a.valor,0);
 }
 
+
+function extDelete(tipo, id){
+  const msg=tipo==='pag'?'Desfazer este pagamento?':'Excluir este registro?';
+  if(!confirm(msg))return;
+  if(tipo==='aporte'){S.aportes=S.aportes.filter(a=>a.id!==id);}
+  else if(tipo==='renda'){S.rendaExtra=S.rendaExtra.filter(r=>r.id!==id);}
+  else if(tipo==='gasto'){S.gastos=S.gastos.filter(g=>g.id!==id);}
+  else if(tipo==='fat'){
+    S.faturas=S.faturas.map(f=>String(f.id)===String(id)?{...f,pagoMes:null,pagoData:null}:f);
+    S.gastos=S.gastos.filter(g=>!(g.auto&&String(g.cartao)===String(id)));
+  }
+  else if(tipo==='cnt'){
+    S.contasFixas=S.contasFixas.map(c=>String(c.id)===String(id)?{...c,pagoMes:null,pagoData:null}:c);
+  }
+  save();
+  renderExtrato();
+  renderCalendario();
+}
 // ─── CALENDÁRIO ──────────────────────────────────────────────
 
 function addRendaExtra(){
@@ -1324,6 +1359,7 @@ function addGasto(){
   document.getElementById('gs-val').value='';
   document.getElementById('gs-desc').value='';
   save();renderGastos();
+  const _pext=document.getElementById('p-ext');if(_pext&&_pext.classList.contains('active'))renderExtrato();
 }
 
 function delGasto(id){
@@ -1503,6 +1539,7 @@ function render(){
   const ae=document.getElementById('alerta');
   ae.className='alert alert-'+al.tipo;
   ae.innerHTML=`<div class="alert-emoji">${al.e}</div><div class="alert-msg">${al.m}</div>`;
+  ae.style.display='flex';
 
   // Semanal list
   const swl=[...S.semanais].reverse().slice(0,5);
@@ -1609,6 +1646,39 @@ function render(){
   // Home motivacional + calendário
   renderHomeMotivacional();
   renderCalendario();
+  // Streak semanal
+  const streak=calcStreak();
+  const sbx=document.getElementById('streak-box');
+  if(sbx){
+    if(streak>0){
+      sbx.style.display='flex';
+      sbx.innerHTML=`<div class="streak-fire">🔥</div><div><div style="display:flex;align-items:baseline;gap:6px"><div class="streak-num">${streak}</div><div class="streak-lbl">semana${streak>1?'s':''} seguida${streak>1?'s':''}</div></div><div class="streak-lbl">de registro semanal</div></div>`;
+    } else {
+      sbx.style.display='none';
+    }
+  }
+
+  // Meta mensal de aporte
+  const n2=new Date();
+  const aportMesAtual=S.aportes.filter(a=>{const d=new Date(a.data+'T00:00:00');return d.getMonth()===n2.getMonth()&&d.getFullYear()===n2.getFullYear();}).reduce((s,a)=>s+a.valor,0);
+  const mmc=document.getElementById('meta-mes-card');
+  if(mmc){
+    const pctMeta=Math.min(100,(aportMesAtual/1871)*100);
+    const faltaMeta=Math.max(0,1871-aportMesAtual);
+    mmc.style.display='block';
+    mmc.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <div class="card-lbl" style="margin:0">Meta de aporte — ${MESES[n2.getMonth()]}/${String(n2.getFullYear()).slice(2)}</div>
+      <div style="font-size:13px;font-weight:600;color:${aportMesAtual>=1871?'var(--gr)':'var(--ink)'}">${brl(aportMesAtual)} <span style="font-size:11px;color:var(--sub)">/ ${brl(1871)}</span></div>
+    </div>
+    <div style="background:var(--neu);border-radius:6px;height:8px;overflow:hidden;margin-bottom:8px">
+      <div style="height:100%;width:${pctMeta}%;background:${aportMesAtual>=1871?'var(--gr)':'var(--bl)'};border-radius:6px;transition:width .4s"></div>
+    </div>
+    <div style="font-size:12px;color:var(--sub)">${aportMesAtual>=1871?'✅ Meta atingida este mês!':'Faltam '+brl(faltaMeta)+' para completar a meta'}</div>`;
+  }
+
+  // Re-render extrato se ativo
+  const pext=document.getElementById('p-ext');if(pext&&pext.classList.contains('active'))renderExtrato();
+
   // Garantir inputs limpos (previne aparição de "null")
   ['ap-val','ap-nota','re-val','re-desc','gs-val','gs-desc','sw-val',
    'benef-nome','benef-val','dv-nome','dv-total','dv-parc'].forEach(id=>{
