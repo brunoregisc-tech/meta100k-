@@ -821,8 +821,6 @@ function renderExtrato(){
           </div>
           <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
             <span style="font-size:14px;font-weight:600;color:${m.cor}">${m.sinal}${brl(m.valor)}</span>
-            ${m.desfazFn?`<button onclick="${m.desfazFn}" style="background:none;border:.5px solid var(--am-bdr);border-radius:4px;cursor:pointer;color:var(--am);font-size:10px;padding:2px 6px">↩</button>`:''}
-            ${m.delFn?`<button onclick="${m.delFn}" style="background:none;border:none;cursor:pointer;color:var(--sub);font-size:16px;line-height:1;padding:0 2px">×</button>`:''}
           </div>
         </div>`).join('')}
       </div>
