@@ -197,7 +197,7 @@ svg.chart{width:100%;height:100%}
 
     <!-- CALENDÁRIO NO INÍCIO -->
     <div class="card">
-      <div class="card-lbl" id="cal-titulo">📅 Contas a pagar este mês</div>
+      <div class="card-lbl" id="cal-titulo">Comprometimento</div>
       <div id="cal-lista"></div>
     </div>
 
@@ -240,7 +240,7 @@ svg.chart{width:100%;height:100%}
         <div class="field"><div class="field-lbl">Destino</div><select id="ap-cofre"></select></div>
         <div class="grid2">
           <div class="field"><div class="field-lbl">Data</div><input type="date" id="ap-data"></div>
-          <div class="field"><div class="field-lbl">Nota</div><input type="text" id="ap-nota" placeholder="opcional"></div>
+          <div class="field"><div class="field-lbl">Nota</div><input type="text" id="ap-nota" placeholder="opcional" value=""></div>
         </div>
         <button class="btn btn-bl" onclick="addAporte()">Registrar aporte</button>
       </div>
@@ -501,7 +501,19 @@ const DATA_INICIO=new Date(2026,5,1);
 const MESES=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
 const PARC=[{r:5,v:112},{r:3,v:79.9},{r:2,v:83.16},{r:4,v:61.47},{r:8,v:304.89},{r:10,v:68.46},{r:4,v:34.51},{r:3,v:52.36},{r:3,v:50.66},{r:2,v:58.19},{r:11,v:251.83},{r:10,v:77.72},{r:15,v:88.82},{r:15,v:141.86},{r:6,v:48.52},{r:3,v:19.60},{r:2,v:37.70},{r:9,v:58.60},{r:3,v:38.74},{r:4,v:39.89}];
 const COFRES=[{id:'meli',nome:'Meli Dólar',emoji:'💵'},{id:'cofrinho',nome:'Cofrinho MP',emoji:'🐷'},{id:'gcb',nome:'GCB Investimento',emoji:'📈'},{id:'sicoob',nome:'Sicoob',emoji:'🏦'},{id:'nubank',nome:'Nubank',emoji:'💜'},{id:'casa',nome:'Casa',emoji:'🏠'},{id:'outros',nome:'Outros',emoji:'💰'}];
-const MARCOS_DEF=[{v:20000,l:'1º semestre — Dez/26',d:'Reserva de emergência formada. Nenhum imprevisto volta pro cartão.',c:'#1D9E75'},{v:33000,l:'2º semestre — Jun/27',d:'Parcelados encerrados. Aporte acelera para R$4.500+/mês.',c:'#185FA5'},{v:47000,l:'3º semestre — Dez/27',d:'Quase metade. Enzo tem 9 anos. Bell e você constroem juntos.',c:'#BA7517'},{v:62000,l:'4º semestre — Jun/28',d:'Mais da metade. A reta final começa a aparecer.',c:'#9b27af'},{v:77000,l:'5º semestre — Dez/28',d:'R$23K faltando. Visível no horizonte. Não para agora.',c:'#c0392b'},{v:100000,l:'META 🎯 — Ago/29',d:'R$100.000 construídos com disciplina. Base para o próximo nível.',c:'#BA7517'}];
+const MARCOS_DEF=[
+  {v:14683, l:'1º trimestre — Set/26', d:'3 meses de disciplina. Base construída.',                    c:'#1D9E75'},
+  {v:20797, l:'2º trimestre — Dez/26', d:'Primeiro semestre concluído. Reserva de emergência formada.',c:'#185FA5'},
+  {v:27097, l:'3º trimestre — Mar/27', d:'9 meses seguidos. Parcelados começando a cair.',             c:'#9b27af'},
+  {v:33587, l:'4º trimestre — Jun/27', d:'1 ano completo. Aporte acelera.',                            c:'#BA7517'},
+  {v:40274, l:'5º trimestre — Set/27', d:'Enzo tem 9 anos. Você está no caminho.',                     c:'#1D9E75'},
+  {v:47163, l:'6º trimestre — Dez/27', d:'Quase metade. Bell vê o resultado.',                        c:'#185FA5'},
+  {v:54262, l:'7º trimestre — Mar/28', d:'Mais da metade do prazo. Momentum.',                        c:'#9b27af'},
+  {v:61576, l:'8º trimestre — Jun/28', d:'Dois anos de jornada. A reta final começa.',                 c:'#BA7517'},
+  {v:69112, l:'9º trimestre — Set/28', d:'R$31K faltando. Visível no horizonte.',                      c:'#1D9E75'},
+  {v:76876, l:'10º trimestre — Dez/28', d:'R$23K faltando. Não para agora.',                           c:'#c0392b'},
+  {v:100000,l:'META 🎯 — Ago/29',       d:'R$100.000 construídos com disciplina. Base para o próximo nível.',c:'#BA7517'},
+];
 const REGRAS_DEF=[{n:'01',t:'Aporte automático no dia 05',d:'Pró-labore entrou → aporte sai antes de qualquer gasto. Pague-se primeiro.',c:'#1D9E75'},{n:'02',t:'Zero novos parcelamentos',d:'20 parcelamentos ativos. Cada compra nova = mais 10–18 meses de sangria.',c:'#A32D2D'},{n:'03',t:'Fatura sempre no total',d:'Nunca o mínimo, nunca parcelar fatura. 15,89%/mês destrói qualquer investimento.',c:'#BA7517'},{n:'04',t:'Reserva intocável de R$20K',d:'Ao atingir R$20K esse valor é piso. Só emergência real o toca.',c:'#1D9E75'},{n:'05',t:'Revisão toda segunda-feira',d:'Anote os saldos. Veja se está na frente ou atrás da meta.',c:'#185FA5'},{n:'06',t:'Regra das 48h no ML/Amazon',d:'Antes de qualquer compra não essencial: espere 48h.',c:'#A32D2D'}];
 
 // ─── STATE ─────────────────────────────────────────────────
@@ -647,7 +659,7 @@ function renderCalendario(){
   const n=new Date(),dh=n.getDate(),m=n.getMonth(),y=n.getFullYear();
   const mesAtual=`${m}_${y}`;
   const t=document.getElementById('cal-titulo');
-  if(t)t.textContent='📅 Contas a pagar — '+MESES[m]+'/'+String(y).slice(2);
+  if(t)t.textContent='Comprometimento — '+MESES[m]+'/'+String(y).slice(2);
   const itens=[];
   S.faturas.forEach(f=>{
     const pago=f.pagoMes===mesAtual;
@@ -676,10 +688,7 @@ function renderCalendario(){
   S.devedores.filter(d=>d.total-d.pago>0).forEach(d=>itens.push({dia:d.dia,icon:'👤',
     nome:d.nome+' me paga',val:brl(d.parc),pago:false,acaoFn:null,acaoLabel:null,
     acaoCor:'var(--bl)',info:diasLabel(d.dia,dh),entrada:true}));
-  S.rendaExtra.filter(r=>{const dt=new Date(r.data+'T00:00:00');return dt.getMonth()===m&&dt.getFullYear()===y;})
-    .forEach(r=>{const dt=new Date(r.data+'T00:00:00');
-    itens.push({dia:dt.getDate(),icon:'💰',nome:r.desc,val:brl(r.valor),pago:false,
-      acaoFn:null,acaoLabel:null,acaoCor:'var(--bl)',info:'',entrada:true});});
+  // Renda extra não aparece no calendário — somente no Extrato
   if(m===10)itens.push({dia:21,icon:'💍',nome:'Aniversário de casamento — Bruno & Bell',val:'',pago:false,
     acaoFn:null,acaoLabel:null,acaoCor:'var(--am)',info:'',especial:true});
   itens.sort((a,b)=>a.dia-b.dia);
@@ -761,7 +770,7 @@ function renderExtrato(){
   }
   if(!movimentos.length){
     document.getElementById('ext-resumo').innerHTML='';
-    document.getElementById('ext-list').innerHTML='<div style="text-align:center;padding:40px;color:var(--sub);font-size:14px">Nenhum registro encontrado.</div>';
+    document.getElementById('ext-list').innerHTML='<div style="text-align:center;padding:40px;color:var(--sub);font-size:14px">Nenhum registro encontrado para este filtro.</div>';
     return;
   }
   const grupos={};
@@ -939,7 +948,7 @@ function addAporte(){
   if(isNaN(val)||val<=0){err.textContent='Valor inválido.';err.style.display='block';return;}
   err.style.display='none';
   S.aportes.push({id:Date.now(),cofre:document.getElementById('ap-cofre').value,valor:val,data:document.getElementById('ap-data').value,nota:document.getElementById('ap-nota').value.trim()});
-  document.getElementById('ap-val').value='';document.getElementById('ap-nota').value='';
+  const _apv=document.getElementById('ap-val');if(_apv)_apv.value='';const _ano=document.getElementById('ap-nota');if(_ano)_ano.value='';
   save();render();
 }
 function addSaldo(){
@@ -952,6 +961,9 @@ function addSaldo(){
   document.getElementById('sl-val').value='';
   save();render();
 }
+
+function limparInput(id){const el=document.getElementById(id);if(el&&(el.value===null||el.value==='null'))el.value='';}
+function limparInputs(...ids){ids.forEach(limparInput);}
 function delSemanal(id){
   S.semanais=S.semanais.filter(s=>s.id!==id);
   save();render();
@@ -1561,7 +1573,7 @@ function render(){
         const cn=COFRES.find(c=>c.id===r.cofre);
         return`<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:${i<d.itens.length-1?'.5px solid var(--bdr)':'none'}"><div style="display:flex;align-items:center;gap:10px"><span style="font-size:18px">${cn?.emoji||'💰'}</span><div><div style="font-size:13px;font-weight:500">${cn?.nome||r.cofre}</div><div style="font-size:11px;color:var(--sub)">${fmtD(r.data)}${r.nota?' · '+r.nota:''}</div></div></div><div style="display:flex;align-items:center;gap:8px"><span style="font-size:14px;font-weight:500;color:var(--gr)">+${brl(r.valor)}</span><button onclick="delAporte(${r.id})" style="background:none;border:none;cursor:pointer;color:var(--sub);font-size:18px;padding:0 2px;line-height:1">×</button></div></div>`;
       }).join('')}</div>
-    </div>`).join(''):'<div style="text-align:center;padding:40px 20px;color:var(--sub);font-size:14px">Nenhum aporte ainda.</div>';
+    </div>`).join(''):'';
 
   // Gráfico SVG
   drawChart(pat);
@@ -1597,6 +1609,12 @@ function render(){
   // Home motivacional + calendário
   renderHomeMotivacional();
   renderCalendario();
+  // Garantir inputs limpos (previne aparição de "null")
+  ['ap-val','ap-nota','re-val','re-desc','gs-val','gs-desc','sw-val',
+   'benef-nome','benef-val','dv-nome','dv-total','dv-parc'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el&&(el.value===null||el.value==='null'))el.value='';
+  });
 }
 
 function porMesFn(){
